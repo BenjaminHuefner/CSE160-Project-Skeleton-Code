@@ -86,3 +86,12 @@ def main():
 if __name__ == '__main__':
     main()
 ```
+
+--------------------------------------
+To view list of containers:
+
+docker ps -a
+
+to start an old container 
+
+docker start <container_name>
