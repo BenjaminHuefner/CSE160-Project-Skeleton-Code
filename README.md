@@ -95,3 +95,18 @@ docker ps -a
 to start an old container 
 
 docker start <container_name>
+
+To list the available images
+1. Docker images
+iii. To run the image in this case – tinyos
+1. docker run -ti <Image_Name>
+2. -ti : to open an interactive bash console(refer to the docker docs)
+iv. To test the installation
+1. cd /opt/tinyos-main #TinyOS root folder
+2. cd /apps/Blink/
+3. make micaz sim #compile first tinyOS program
+
+docker run --name CSE160 -v //wsl.localhost/Ubuntu-24.04/home/benjaminhuefner/CSE160-Project-Skeleton-Code:/h
+ome/cse160 -it ucmercedandeslab/tinyos_debian /bin/bash
+
+test
