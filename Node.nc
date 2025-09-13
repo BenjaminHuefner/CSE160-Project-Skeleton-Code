@@ -15,6 +15,7 @@
 
 module Node{
    uses interface Boot;
+   
 
    uses interface SplitControl as AMControl;
    uses interface Receive;
@@ -32,7 +33,7 @@ implementation{
 
    event void Boot.booted(){
       call AMControl.start();
-
+      call 
       dbg(GENERAL_CHANNEL, "Booted\n");
    }
 
