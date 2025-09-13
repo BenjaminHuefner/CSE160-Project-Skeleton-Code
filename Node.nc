@@ -16,6 +16,7 @@
 module Node{
    uses interface Boot;
    
+   uses interface NeighborDiscovery;
 
    uses interface SplitControl as AMControl;
    uses interface Receive;
@@ -33,7 +34,9 @@ implementation{
 
    event void Boot.booted(){
       call AMControl.start();
-      call 
+
+      call NeighborDiscovery.broadcast();
+
       dbg(GENERAL_CHANNEL, "Booted\n");
    }
 
