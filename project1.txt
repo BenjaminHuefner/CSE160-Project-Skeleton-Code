@@ -1,0 +1,12 @@
+So, For neighbor discovery, i will occasionally broadcast an "I'm here" message.
+there will be a function which recieves addresses from the ack message of the broadcast message,
+and puts that info in the neighbor list.
+A final third function returns a list of NeighborDiscovery
+
+For flooding, there is one flood function.
+the flood function takes in a message, and has at least one previous flood message stored
+if the message is the same as the one stored, packet dies there
+else, decrement TTL,
+ask neighbor discovery for neighbors
+if neighbors is empty, broadcast to all neighbors
+else, simplesend to all neighbors, sans the sender

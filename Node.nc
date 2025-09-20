@@ -56,6 +56,14 @@ implementation{
       if(len==sizeof(pack)){
          pack* myMsg=(pack*) payload;
          dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
+         if(myMsg->protocol==6){
+            dbg(NEIGHBOR_CHANNEL, "Neighbor to %d\n", myMsg->src);
+            makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 0, 0, 7, payload, PACKET_MAX_PAYLOAD_SIZE);
+            call Sender.send(sendPackage, myMsg->src);
+         }
+         if(myMsg->protocol==7){
+            call NeighborDiscovery.neighborFound(myMsg->src);
+         }
          return msg;
       }
       dbg(GENERAL_CHANNEL, "Unknown Packet Type %d\n", len);
