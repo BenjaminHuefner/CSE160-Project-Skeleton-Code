@@ -18,7 +18,7 @@ module NeighborDiscoveryP{
 }
 implementation{
    pack broadcastPackage;
-   uint16_t numNeighbor=0;
+   uint16_t numNeighbor=3;
 
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){
       Package->src = src;
@@ -39,7 +39,7 @@ implementation{
    }
 
    task void broadcastTask(){
-      dbg(GENERAL_CHANNEL, "task fired");
+      dbg(GENERAL_CHANNEL, "Neighbor Discovery\n");
          //makePack(&broadcastPackage, TOS_NODE_ID, 0, 0, 0, 7, 0, PACKET_MAX_PAYLOAD_SIZE);
         //call SimpleSend.send(broadcastPackage,(AM_BROADCAST_ADDR));
    }
