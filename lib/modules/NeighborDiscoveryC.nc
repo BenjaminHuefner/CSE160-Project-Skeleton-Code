@@ -20,6 +20,8 @@ implementation{
 
    //Lists
    components new ListC(uint16_t, 20);
+   components new HashmapC(uint16_t, 20);
 
    NeighborDiscoveryP.List -> ListC;
+   NeighborDiscoveryP.Hashmap -> HashmapC;
 }

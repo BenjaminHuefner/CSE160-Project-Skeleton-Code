@@ -29,6 +29,7 @@ module Node{
 
 implementation{
    pack sendPackage;
+   uint16_t seqNum=0;
 
    // Prototypes
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
@@ -36,7 +37,7 @@ implementation{
    event void Boot.booted(){
       call AMControl.start();
 
-      call NeighborDiscovery.broadcast();
+      call NeighborDiscovery.broadcast(TOS_NODE_ID);
 
       dbg(GENERAL_CHANNEL, "Booted\n");
    }
@@ -53,16 +54,24 @@ implementation{
    event void AMControl.stopDone(error_t err){}
 
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
-      dbg(GENERAL_CHANNEL, "Packet Received\n");
       if(len==sizeof(pack)){
          pack* myMsg=(pack*) payload;
-         dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
+         if(myMsg->protocol==0){
+            if(myMsg->dest==TOS_NODE_ID){
+               dbg(GENERAL_CHANNEL, "Packet Received\n");
+               dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
+            }else{
+               call Flooder.flood(*myMsg, myMsg->dest);
+            }
+         }
          if(myMsg->protocol==6){
-            dbg(NEIGHBOR_CHANNEL, "Neighbor to %d\n", myMsg->src);
-            makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 0, 0, 7, payload, PACKET_MAX_PAYLOAD_SIZE);
+            dbg(NEIGHBOR_CHANNEL, "sent reply\n");
+            call NeighborDiscovery.neighborFound(myMsg->src);
+            makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 0, 7, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
             call Sender.send(sendPackage, myMsg->src);
          }
          if(myMsg->protocol==7){
+            dbg(NEIGHBOR_CHANNEL, "reply recieved\n");
             call NeighborDiscovery.neighborFound(myMsg->src);
          }
          return msg;
@@ -74,7 +83,7 @@ implementation{
 
    event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
       dbg(GENERAL_CHANNEL, "PING EVENT \n");
-      makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+      makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
       call Flooder.flood(sendPackage, destination);
    }
 
@@ -100,6 +109,7 @@ implementation{
       Package->TTL = TTL;
       Package->seq = seq;
       Package->protocol = protocol;
+      seqNum++;
       memcpy(Package->payload, payload, length);
    }
 }

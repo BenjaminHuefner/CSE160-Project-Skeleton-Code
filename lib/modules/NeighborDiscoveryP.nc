@@ -9,6 +9,7 @@ module NeighborDiscoveryP{
    uses interface Timer<TMilli> as broadcastTimer;
 
    uses interface List<uint16_t>;
+   uses interface Hashmap<uint16_t>;
 
    uses interface Packet;
    uses interface AMPacket;
@@ -18,7 +19,10 @@ module NeighborDiscoveryP{
 }
 implementation{
    pack broadcastPackage;
-   uint16_t numNeighbor=3;
+   uint16_t nodeID=0;
+   uint8_t *payload=&nodeID;
+   uint16_t count=0;
+   uint16_t temp=0;
 
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){
       Package->src = src;
@@ -32,35 +36,70 @@ implementation{
    void postBroadcastTask(){
       // If a task already exist, we don't want to overwrite the clock, so
       // we can ignore it.
+      count++;
+      makePack(&broadcastPackage, nodeID, (AM_BROADCAST_ADDR), 1, 6, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+      call SimpleSend.send(broadcastPackage,(AM_BROADCAST_ADDR));
+      
       if(call broadcastTimer.isRunning() == FALSE){
           // A random element of delay is included to prevent congestion.
-         call broadcastTimer.startOneShot( (call Random.rand16() %3000)+10000);
+         call broadcastTimer.startOneShot( (call Random.rand16() %30000)+1000);
       }
    }
 
-   task void broadcastTask(){
-      dbg(GENERAL_CHANNEL, "Neighbor Discovery\n");
-         //makePack(&broadcastPackage, TOS_NODE_ID, 0, 0, 0, 7, 0, PACKET_MAX_PAYLOAD_SIZE);
-        //call SimpleSend.send(broadcastPackage,(AM_BROADCAST_ADDR));
+   task void broadcastTask(){  
+      call broadcastTimer.startOneShot( (call Random.rand16() %30000)+100000);
+      postBroadcastTask();
    }
 
    event void broadcastTimer.fired(){
       post broadcastTask();
    }
 
-   command error_t NeighborDiscovery.broadcast(){
+   command error_t NeighborDiscovery.broadcast(uint16_t src){
+      nodeID=src;
       postBroadcastTask();
       return SUCCESS;
    }
 
+   void delete(uint16_t src){
+      dbg(NEIGHBOR_CHANNEL, "deleting neighbor %d from %d\n",src,nodeID );
+      temp=call List.popback();
+      while(temp != src){  
+         call List.pushfront(temp);
+         temp= call List.popback();
+      }
+      dbg(NEIGHBOR_CHANNEL,"success\n");
+   call Hashmap.remove(src);
+      
+   }
+
    command error_t NeighborDiscovery.neighborFound(uint16_t src){
-      dbg(NEIGHBOR_CHANNEL, "Neighbor to %d\n", src);
-      numNeighbor++;
+      dbg(NEIGHBOR_CHANNEL, "%d Neighbor to %d\n", nodeID,src);
+      if(!call Hashmap.contains(src)){ 
+         dbg(NEIGHBOR_CHANNEL, "%d Neighbor %d not in table\n", nodeID,src);
+         call Hashmap.insert(src,count);
+         if(call List.size()==20){
+            temp = call List.popback();
+         }
+         call List.pushfront(src);
+      }else{
+         dbg(NEIGHBOR_CHANNEL, "%d Neighbor %d in table\n", nodeID,src);
+         temp =call Hashmap.get(src);
+         dbg(NEIGHBOR_CHANNEL, "Last seqNum from this neighbor %d\n", temp);
+         if(count-temp>5){
+            delete(src);
+         }else{
+            //testing delete
+            //if(src!=2) {call Hashmap.insert(src,count);}
+            call Hashmap.insert(src,count);
+         }
+
+      }
       return SUCCESS;
    }
 
    command uint16_t NeighborDiscovery.numNeighbors(){
-      return numNeighbor;
+      return call List.size();
    }
 
    command uint16_t NeighborDiscovery.NeighborNum(uint16_t ind){
@@ -69,6 +108,5 @@ implementation{
 
    event void AMSend.sendDone(message_t* msg, error_t error){
      
-      postBroadcastTask();
    }
 }
