@@ -20,6 +20,8 @@ implementation{
    FloodP.SimpleSend-> Sender;
 
    //Lists
+   components new HashmapC(uint16_t, 20);
+   FloodP.Hashmap -> HashmapC;
   
 
 }
