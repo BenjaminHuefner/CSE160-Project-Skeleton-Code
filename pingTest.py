@@ -26,7 +26,19 @@ def main():
     s.runTime(1);
 
     s.ping(1, 10, "Hi!");
-    s.runTime(200);
+    s.runTime(1);
+
+    s.neighborDMP(1);
+    s.runTime(1);
+
+    s.neighborDMP(10);
+    s.runTime(1);
+
+    s.neighborDMP(19);
+    s.runTime(1);
+
+    s.ping(1, 10, 3);
+    s.runTime(2);
 
 if __name__ == '__main__':
     main()
