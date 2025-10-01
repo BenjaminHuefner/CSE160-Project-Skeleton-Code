@@ -61,35 +61,11 @@ implementation{
          if(myMsg->TTL==0){
             dbg(GENERAL_CHANNEL,"TTL expired\n");
          }else{
-            myMsg->TTL--;
-            if(myMsg->protocol==0){
-               if(myMsg->dest==TOS_NODE_ID){
-                  dbg(GENERAL_CHANNEL, "Ping Packet Received from %d\n",myMsg->src);
-                  dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
-
-                  dbg(GENERAL_CHANNEL, "PING REPLY EVENT %d to %d\n",TOS_NODE_ID,myMsg->src);
-                  makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 10, 1, seqNum, emptyPayload, PACKET_MAX_PAYLOAD_SIZE);
-                  call Flooder.flood(sendPackage, myMsg->src, TOS_NODE_ID);
-               }else{
-                  call Flooder.flood(*myMsg, myMsg->dest,TOS_NODE_ID);
-               }
+            if(myMsg->protocol==0 || myMsg->protocol==1){
+               call Flooder.flood(*myMsg, TOS_NODE_ID);
             }
-            if(myMsg->protocol==1){
-               if(myMsg->dest==TOS_NODE_ID){
-                  dbg(GENERAL_CHANNEL, "Ping Reply Received from %d\n",myMsg->src);
-               }else{
-                  call Flooder.flood(*myMsg, myMsg->dest,TOS_NODE_ID);
-               }
-            }
-            if(myMsg->protocol==6){
-               dbg(NEIGHBOR_CHANNEL, "sent reply\n");
-               call NeighborDiscovery.neighborFound(myMsg->src);
-               makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 1, 7, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
-               call Sender.send(sendPackage, myMsg->src);
-            }
-            if(myMsg->protocol==7){
-               dbg(NEIGHBOR_CHANNEL, "reply recieved\n");
-               call NeighborDiscovery.neighborFound(myMsg->src);
+            if(myMsg->protocol==6 || myMsg->protocol==7){
+               call NeighborDiscovery.neighborFound(myMsg->src,myMsg->protocol);
             }
          }
          return msg;
@@ -101,17 +77,11 @@ implementation{
 
    event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
       dbg(GENERAL_CHANNEL, "PING EVENT %d to %d\n",TOS_NODE_ID,destination);
-      makePack(&sendPackage, TOS_NODE_ID, destination, 10, 0, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
-      call Flooder.flood(sendPackage, destination, TOS_NODE_ID);
+      call Flooder.startFlood(TOS_NODE_ID, destination, payload);
    }
 
    event void CommandHandler.printNeighbors(){
-      numNeighbors=call NeighborDiscovery.numNeighbors();
-      dbg(GENERAL_CHANNEL, "Node %d has %d neighbor(s)\n",TOS_NODE_ID,numNeighbors);
-      while(numNeighbors>0){
-         dbg(GENERAL_CHANNEL, "Node %d has neighbor: %d\n",TOS_NODE_ID,call NeighborDiscovery.NeighborNum(numNeighbors-1));
-         numNeighbors--;
-      }
+      call NeighborDiscovery.dump();
    }
 
    event void CommandHandler.printRouteTable(){}
