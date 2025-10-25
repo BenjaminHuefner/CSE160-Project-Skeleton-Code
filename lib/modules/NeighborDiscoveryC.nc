@@ -19,8 +19,8 @@ implementation{
    NeighborDiscoveryP.SimpleSend-> Sender;
 
    //Lists
-   components new ListC(uint16_t, 20);
-   components new HashmapC(uint16_t, 20);
+   components new ListC(uint8_t, 20);
+   components new HashmapC(uint8_t, 20);
 
    NeighborDiscoveryP.List -> ListC;
    NeighborDiscoveryP.Hashmap -> HashmapC;

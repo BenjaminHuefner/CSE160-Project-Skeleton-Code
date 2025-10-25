@@ -34,6 +34,9 @@ implementation {
     components FloodC;
     Node.Flooder -> FloodC;
 
+    components IPC;
+    Node.IP ->IPC
+
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;
 }

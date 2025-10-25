@@ -18,6 +18,7 @@ module Node{
    
    uses interface NeighborDiscovery;
    uses interface Flood as Flooder;
+   uses interface IP;
 
    uses interface SplitControl as AMControl;
    uses interface Receive;
@@ -54,6 +55,9 @@ implementation{
    }
 
    event void AMControl.stopDone(error_t err){}
+   event void Flooder.floodUpdated(uint8_t updated){}
+   event void Flooder.messageRecieved(uint8_t* pay){}
+   event void NeighborDiscovery.neighborUpdate(uint8_t updated){}
 
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
       if(len==sizeof(pack)){
@@ -77,7 +81,7 @@ implementation{
 
    event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
       dbg(GENERAL_CHANNEL, "PING EVENT %d to %d\n",TOS_NODE_ID,destination);
-      call Flooder.startFlood(TOS_NODE_ID, destination, payload);
+      call IP.sendPing(TOS_NODE_ID, destination, payload);
    }
 
    event void CommandHandler.printNeighbors(){

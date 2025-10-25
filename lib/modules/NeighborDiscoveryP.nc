@@ -8,8 +8,8 @@ module NeighborDiscoveryP{
 
    uses interface Timer<TMilli> as broadcastTimer;
 
-   uses interface List<uint16_t>;
-   uses interface Hashmap<uint16_t>;
+   uses interface List<uint8_t>;
+   uses interface Hashmap<uint8_t>;
 
    uses interface Packet;
    uses interface AMPacket;
@@ -22,8 +22,8 @@ implementation{
    uint16_t nodeID=0;
    uint8_t *payload=&nodeID;
    uint16_t count=0;
-   uint16_t temp=0;
-   uint16_t source;
+   uint8_t temp=0;
+   uint8_t source;
    uint16_t prot;
    uint8_t i;
 
@@ -43,6 +43,10 @@ implementation{
       // we can ignore it.
       count++;
       makePack(&broadcastPackage, nodeID, (AM_BROADCAST_ADDR), 1, 6, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+      if(count==3){
+         // dbg(GENERAL_CHANNEL,"test\n");
+         signal NeighborDiscovery.neighborUpdate(1);
+      }
       call SimpleSend.send(broadcastPackage,(AM_BROADCAST_ADDR));
       
       if(call broadcastTimer.isRunning() == FALSE){
@@ -66,7 +70,7 @@ implementation{
    }
 
    task void broadcastTask(){  
-      call broadcastTimer.startOneShot( (call Random.rand16() %30000)+100000);
+      call broadcastTimer.startOneShot( (call Random.rand16() %3000)+10000);
       updateTable();
       postBroadcastTask();
    }
@@ -75,7 +79,7 @@ implementation{
       post broadcastTask();
    }
 
-   command error_t NeighborDiscovery.broadcast(uint16_t src){
+   command error_t NeighborDiscovery.broadcast(uint8_t src){
       nodeID=src;
       postBroadcastTask();
       return SUCCESS;
@@ -101,11 +105,12 @@ implementation{
       }
    }
 
-   command error_t NeighborDiscovery.neighborFound(uint16_t src, uint16_t protocol){
+   command error_t NeighborDiscovery.neighborFound(uint8_t src, uint8_t protocol){
       source=src;
       prot=protocol;dbg(NEIGHBOR_CHANNEL, "%d Neighbor to %d\n", nodeID,source);
       if(!call Hashmap.contains(source)){ 
          dbg(NEIGHBOR_CHANNEL, "%d Neighbor %d not in table\n", nodeID,source);
+
          call Hashmap.insert(source,count);
          if(call List.size()==20){
             temp = call List.popback();
@@ -125,7 +130,7 @@ implementation{
       return call List.size();
    }
 
-   command uint16_t NeighborDiscovery.NeighborNum(uint16_t ind){
+   command uint16_t NeighborDiscovery.NeighborNum(uint8_t ind){
       return call List.get(ind);
    }
 

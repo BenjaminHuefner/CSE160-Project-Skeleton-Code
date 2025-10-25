@@ -1,0 +1,21 @@
+maybe implement new neighbor discovery reliability score
+
+Wire up IP and LinkRouting 90m
+Implement IP packets(same method as flooding packets) 30m
+change flooding packets to use flooding protocol    10m
+flooding forwards linkstate packets to linkRouting  10m
+node forwards neigbor discovery and flooding packets to respective modules, but IP gets ping    10m
+link state packets get forwarded by flooding to Link routing, IP uses link routing for routing table for ping. 20m
+flooding, linkstate need to wait for neighbor discovery to be settled before posting their tasks, IP needs 
+to wait for linkstate to be done before sending pings.  40m
+Linkstate creates packets (increasing sequence number) and floods them  90m
+Implement graph table from linkstate 90m
+Implement Dijkstra 60m
+Linkstate turns recieved packets into routing table 30m
+When Neighbor Discovery changes it alerts all connected modules 20m
+when neighbor discovery changes, send out new Linkstate, update table, update routing 20m
+when new linkstate recieved, update table, and rerun routing 20m
+
+90+30+10+10+10+20+40+90+90+60+30+20+20+20
+
+est=10hrs

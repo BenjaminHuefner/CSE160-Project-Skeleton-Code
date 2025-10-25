@@ -5,6 +5,8 @@ module FloodP{
    provides interface Flood;
 
    uses interface SimpleSend;
+   uses interface Queue<pack>;
+   uses interface Timer<TMilli> as floodTimer;
 
    uses interface NeighborDiscovery;
 
@@ -12,6 +14,8 @@ module FloodP{
    uses interface AMPacket;
 
    uses interface Hashmap<uint16_t>;
+   
+   uses interface Random;
    
 }
 implementation{
@@ -21,10 +25,12 @@ implementation{
     uint16_t seqNum=0;
     uint16_t nodeID;
     uint16_t currNeighbor;
+    uint8_t prevNeighbor;
     uint8_t old=0;
     uint16_t destination=0;
     uint8_t *pay=&seqNum;
     uint8_t *temp=&floodPackage;
+    uint8_t neighborState=0;
 
     void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t *payload, uint8_t length){
       Package->src = src;
@@ -36,6 +42,36 @@ implementation{
       memcpy(Package->payload, payload, length);
    }
 
+   task void sendFlood(){
+      
+      if(!call Queue.empty()){
+         if(neighborState){
+            // dbg(GENERAL_CHANNEL,"test\n");
+            linkPackage= call Queue.head();
+            call Queue.dequeue();
+            numNeighbor= call NeighborDiscovery.numNeighbors();
+            prevNeighbor=linkPackage.src;
+            while(numNeighbor>0){
+               currNeighbor= call NeighborDiscovery.NeighborNum(numNeighbor-1);
+               if (currNeighbor!=prevNeighbor){
+                  linkPackage.src= nodeID;
+                  linkPackage.dest=currNeighbor;
+                  
+                  dbg(FLOODING_CHANNEL, "%d Flood Neighbor %d\n", nodeID,currNeighbor);
+                  call SimpleSend.send(linkPackage,linkPackage.dest);
+               }
+
+               numNeighbor--;
+            }
+            if(call floodTimer.isRunning() == FALSE){
+               call floodTimer.startOneShot( (call Random.rand16() %300));
+            }
+         }
+      }
+   }
+   event void floodTimer.fired(){
+      post sendFlood();
+   }
    task void floodTask(){
       
       
@@ -47,51 +83,64 @@ implementation{
       if(!old){
          
          call Hashmap.insert(floodPackage.src,floodPackage.seq);
-         numNeighbor= call NeighborDiscovery.numNeighbors();
+         // numNeighbor= call NeighborDiscovery.numNeighbors();
          linkPackage.TTL--;
-         
-         while(numNeighbor>0){
-            currNeighbor= call NeighborDiscovery.NeighborNum(numNeighbor-1);
-            if (currNeighbor!=linkPackage.src){
-               linkPackage.src= nodeID;
-               linkPackage.dest=currNeighbor;
-               call SimpleSend.send(linkPackage,linkPackage.dest);
-            }
+         call Queue.enqueue(linkPackage);
+         post sendFlood();
+         // while(numNeighbor>0){
+         //    currNeighbor= call NeighborDiscovery.NeighborNum(numNeighbor-1);
+         //    if (currNeighbor!=linkPackage.src){
+         //       linkPackage.src= nodeID;
+         //       linkPackage.dest=currNeighbor;
+         //       call SimpleSend.send(linkPackage,linkPackage.dest);
+         //    }
 
-            numNeighbor--;
-         }
-         if(floodPackage.dest==nodeID){
+         //    numNeighbor--;
+         // }
+         //if(floodPackage.dest==nodeID){
             if(!call Hashmap.get(floodPackage.src)>=floodPackage.seq){
-               if(linkPackage.protocol==0){
-                  dbg(GENERAL_CHANNEL, "Ping Packet Received from %d\n",floodPackage.src);
-                  dbg(GENERAL_CHANNEL, "Package Payload: %s\n", floodPackage.payload);
+               if(linkPackage.protocol==2){
+                  signal Flood.messageRecieved(floodPackage.payload);
+                  // dbg(GENERAL_CHANNEL, "Ping Packet Received from %d\n",floodPackage.src);
+                  // dbg(GENERAL_CHANNEL, "Package Payload: %s\n", floodPackage.payload);
 
-                  destination=floodPackage.src;
-                  dbg(GENERAL_CHANNEL, "PING REPLY EVENT %d to %d\n",TOS_NODE_ID,floodPackage.src);
-                  makePack(&floodPackage, nodeID, destination, 1, 1, seqNum, pay, PACKET_MAX_PAYLOAD_SIZE);
-                  makePack(&linkPackage,nodeID,destination,20,1,seqNum, &floodPackage,PACKET_MAX_PAYLOAD_SIZE);
+                  // destination=floodPackage.src;
+                  // dbg(GENERAL_CHANNEL, "PING REPLY EVENT %d to %d\n",TOS_NODE_ID,floodPackage.src);
+                  // makePack(&floodPackage, nodeID, destination, 1, 1, seqNum, pay, PACKET_MAX_PAYLOAD_SIZE);
+                  // makePack(&linkPackage,nodeID,destination,20,1,seqNum, &floodPackage,PACKET_MAX_PAYLOAD_SIZE);
 
-                  old=0;
-                  post floodTask();
+                  // old=0;
+                  // post floodTask();
                   return;
-               }else{
-                  if(linkPackage.protocol==1){
-                     dbg(GENERAL_CHANNEL, "Ping Reply Received from %d\n",floodPackage.src);
-                     return;
-                  }
+               }//else{
+                  // if(linkPackage.protocol==1){
+                  //    dbg(GENERAL_CHANNEL, "Ping Reply Received from %d\n",floodPackage.src);
+                  //    return;
+                  // }
 
-               }
-            }
+               // }
+           }
             
-         }
+         // }
          
          
-         dbg(FLOODING_CHANNEL, "Flood %d Neighbors\n", numNeighbor);
+         
       }
       old=0;
    }
 
-   command error_t Flood.flood(pack msg,uint16_t ID){
+   event void NeighborDiscovery.neighborUpdate(uint8_t updated){
+      if(updated==0){
+         neighborState=0;
+      }else{
+         neighborState=1;
+         // dbg(GENERAL_CHANNEL,"test\n");
+         post sendFlood();
+      }
+      signal Flood.floodUpdated(updated);
+   }
+
+   command error_t Flood.flood(pack msg,uint8_t ID){
       //lastSrc=tempSrc;
       nodeID=ID;
       linkPackage=msg;
@@ -103,7 +152,7 @@ implementation{
       return SUCCESS;
    }
 
-   command error_t Flood.startFlood(uint16_t src, uint16_t dest, uint8_t *payload){
+   command error_t Flood.startFlood(uint8_t src, uint8_t dest, uint8_t *payload){
       nodeID=src;
       makePack(&floodPackage, src, dest, 1, 0, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
       temp= &floodPackage;
