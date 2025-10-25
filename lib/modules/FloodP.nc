@@ -99,18 +99,9 @@ implementation{
          // }
          //if(floodPackage.dest==nodeID){
             if(!call Hashmap.get(floodPackage.src)>=floodPackage.seq){
-               if(linkPackage.protocol==2){
+               if(floodPackage.protocol==2){
                   signal Flood.messageRecieved(floodPackage.payload);
-                  // dbg(GENERAL_CHANNEL, "Ping Packet Received from %d\n",floodPackage.src);
-                  // dbg(GENERAL_CHANNEL, "Package Payload: %s\n", floodPackage.payload);
-
-                  // destination=floodPackage.src;
-                  // dbg(GENERAL_CHANNEL, "PING REPLY EVENT %d to %d\n",TOS_NODE_ID,floodPackage.src);
-                  // makePack(&floodPackage, nodeID, destination, 1, 1, seqNum, pay, PACKET_MAX_PAYLOAD_SIZE);
-                  // makePack(&linkPackage,nodeID,destination,20,1,seqNum, &floodPackage,PACKET_MAX_PAYLOAD_SIZE);
-
-                  // old=0;
-                  // post floodTask();
+                  
                   return;
                }//else{
                   // if(linkPackage.protocol==1){
@@ -154,9 +145,9 @@ implementation{
 
    command error_t Flood.startFlood(uint8_t src, uint8_t dest, uint8_t *payload){
       nodeID=src;
-      makePack(&floodPackage, src, dest, 1, 0, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
+      makePack(&floodPackage, src, dest, 1, 2, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
       temp= &floodPackage;
-      makePack(&linkPackage,src,dest,20,0,seqNum, temp,PACKET_MAX_PAYLOAD_SIZE);
+      makePack(&linkPackage,src,dest,20,8,seqNum, temp,PACKET_MAX_PAYLOAD_SIZE);
       post floodTask();
    }
 

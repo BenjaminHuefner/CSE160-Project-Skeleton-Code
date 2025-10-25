@@ -19,7 +19,7 @@ implementation{
    components RandomC as Random;
 
    //Timers
-   IPP.IPTimer -> IPPTimer;
+   IPP.IPTimer -> IPTimer;
    IPP.Random -> Random;
    IPP.SimpleSend-> Sender;
 

@@ -25,7 +25,8 @@ implementation{
     uint8_t nodeID;
     uint8_t routingState=0;
     uint8_t *temp=&IPPackage;
-    uint8_t routing[256]={0};
+    uint8_t *pay=&nodeID;
+    // uint8_t routing[256]={0};
 
     void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t *payload, uint8_t length){
       Package->src = src;
@@ -37,13 +38,13 @@ implementation{
       memcpy(Package->payload, payload, length);
    }
 
-   task sendTask(){
+   task void sendTask(){
     if(!call Queue.empty()){
          if(routingState){
             // dbg(GENERAL_CHANNEL,"test\n");
             linkPackage= call Queue.head();
             call Queue.dequeue();
-            SimpleSend.send(linkPackage,linkPackage.dest)
+            call SimpleSend.send(linkPackage,linkPackage.dest);
             if(call IPTimer.isRunning() == FALSE){
                call IPTimer.startOneShot( (call Random.rand16() %300));
             }
@@ -55,13 +56,45 @@ implementation{
       post sendTask();
    }
    
-    task pingTask(){
-        nextDest=call LinkRouting.routingTable(IPPackage.dest);
-        linkPackage.dest=nextDest;
+    task void pingTask(){
+        if(IPPackage.dest==nodeID){
+            if(IPPackage.protocol==0){
+                dbg(GENERAL_CHANNEL, "Ping Packet Received from %d\n",IPPackage.src);
+                dbg(GENERAL_CHANNEL, "Package Payload: %s\n", IPPackage.payload);
+                nextDest=IPPackage.src;
+                dbg(GENERAL_CHANNEL, "PING REPLY EVENT %d to %d\n",TOS_NODE_ID,IPPackage.src);
+                makePack(&IPPackage, nodeID, nextDest, 1, 1, seqNum, pay, PACKET_MAX_PAYLOAD_SIZE);
+                nextDest=call LinkRouting.routingTable(IPPackage.dest);
+                makePack(&linkPackage,nodeID,nextDest,20,1,seqNum, &IPPackage,PACKET_MAX_PAYLOAD_SIZE);
+                call Queue.enqueue(linkPackage);
+                post sendTask();
+            }else{
+                dbg(GENERAL_CHANNEL, "Ping Reply Received from %d\n",IPPackage.src);
+                return;
+            }
+            
+        }else{
+            nextDest=call LinkRouting.routingTable(IPPackage.dest);
+            linkPackage.src=nodeID;
+            linkPackage.dest=nextDest;
+            call Queue.enqueue(linkPackage);
+            post sendTask();
+        }
+
+        
+        return;
     }
    
+   event void LinkRouting.routingState(uint8_t updated){
+        if(updated){
+            routingState=1;
+            post sendTask();
+        }else{
+            routingState=0;
+        }
+   }
 
-   error_t sendPing(uint8_t src, uint8_t dest, uint8_t* payload){
+   command error_t IP.sendPing(uint8_t src, uint8_t dest, uint8_t* payload){
     nodeID=src;
     makePack(&IPPackage, src, dest, 1, 0, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
       temp= &IPPackage;
@@ -71,8 +104,13 @@ implementation{
     return SUCCESS;
 
    }
-   error_t readPing(pack msg, uint8_t ownID){
+   command error_t IP.readPing(pack msg, uint8_t ownID){
     nodeID=ownID;
+    linkPackage=msg;
+    temp=msg.payload;
+    IPPackage= *(pack*) temp;
+    post pingTask();
+      
     return SUCCESS;
 
    }

@@ -65,11 +65,14 @@ implementation{
          if(myMsg->TTL==0){
             dbg(GENERAL_CHANNEL,"TTL expired\n");
          }else{
-            if(myMsg->protocol==0 || myMsg->protocol==1){
+            if(myMsg->protocol==8){
                call Flooder.flood(*myMsg, TOS_NODE_ID);
             }
             if(myMsg->protocol==6 || myMsg->protocol==7){
                call NeighborDiscovery.neighborFound(myMsg->src,myMsg->protocol);
+            }
+            if(myMsg->protocol==0 || myMsg->protocol==1){
+               call IP.readPing(*myMsg, TOS_NODE_ID);
             }
          }
          return msg;
