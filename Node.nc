@@ -18,6 +18,7 @@ module Node{
    
    uses interface NeighborDiscovery;
    uses interface Flood as Flooder;
+   uses interface LinkRouting;
    uses interface IP;
 
    uses interface SplitControl as AMControl;
@@ -58,6 +59,7 @@ implementation{
    event void Flooder.floodUpdated(uint8_t updated){}
    event void Flooder.messageRecieved(uint8_t* pay){}
    event void NeighborDiscovery.neighborUpdate(uint8_t updated){}
+   event void LinkRouting.routingState(uint8_t updated){}
 
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
       if(len==sizeof(pack)){
@@ -91,7 +93,9 @@ implementation{
       call NeighborDiscovery.dump();
    }
 
-   event void CommandHandler.printRouteTable(){}
+   event void CommandHandler.printRouteTable(){
+      call LinkRouting.printTable();
+   }
 
    event void CommandHandler.printLinkState(){}
 

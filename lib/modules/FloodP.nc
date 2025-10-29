@@ -61,17 +61,17 @@ implementation{
                   linkPackage.dest=currNeighbor;
                   
                   // dbg(FLOODING_CHANNEL, "%d Flood Neighbor %d\n", nodeID,currNeighbor);
-                  if(floodPackage.src==2){
-                  dbg(FLOODING_CHANNEL, "Node %d flooding to %d packet originally from %d with seq %d\n",nodeID, currNeighbor,floodPackage.src,floodPackage.seq);
+                  // if(floodPackage.src==2){
+                  // dbg(FLOODING_CHANNEL, "Node %d flooding to %d packet originally from %d with seq %d\n",nodeID, currNeighbor,floodPackage.src,floodPackage.seq);
 
-                  }
+                  // }
                   call SimpleSend.send(linkPackage,linkPackage.dest);
                }
 
                numNeighbor--;
             }
             if(call floodTimer.isRunning() == FALSE){
-               call floodTimer.startOneShot( (call Random.rand16() %300)+1000);
+               call floodTimer.startOneShot( (call Random.rand16() %3000)+1000);
             }
          }
       }
@@ -86,7 +86,7 @@ implementation{
       
       if(call Hashmap.contains(floodPackage.src)){
          if(call Hashmap.get(floodPackage.src)>=floodPackage.seq){
-            dbg(FLOODING_CHANNEL,"Old Packet from %d with seq %d\n",floodPackage.src,floodPackage.seq);
+            // dbg(FLOODING_CHANNEL,"Old Packet from %d with seq %d\n",floodPackage.src,floodPackage.seq);
             old=1;
          }
       }
@@ -97,7 +97,7 @@ implementation{
          linkPackage.TTL--;
          call Queue.enqueue(linkPackage);
          if(call floodTimer.isRunning() == FALSE){
-               call floodTimer.startOneShot( (call Random.rand16() %300)+1000);
+               call floodTimer.startOneShot( (call Random.rand16() %3000)+1000);
             }
          // post sendFlood();
          // while(numNeighbor>0){
@@ -111,10 +111,9 @@ implementation{
          //    numNeighbor--;
          // }
          //if(floodPackage.dest==nodeID){
-            if(!call Hashmap.get(floodPackage.src)>=floodPackage.seq){
+            // if(!call Hashmap.get(floodPackage.src)>=floodPackage.seq){
                // dbg(GENERAL_CHANNEL,"test\n");
                if(floodPackage.protocol==2){
-                  // dbg(GENERAL_CHANNEL,"test2\n");
                   signal Flood.messageRecieved(floodPackage.payload);
                   
                   return;
@@ -125,7 +124,7 @@ implementation{
                   // }
 
                // }
-           }
+         //   }
             
          // }
          

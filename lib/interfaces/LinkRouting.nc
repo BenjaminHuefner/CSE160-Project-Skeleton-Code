@@ -3,5 +3,6 @@
 
 interface LinkRouting{
    command uint8_t routingTable(uint8_t dest);
+   command void printTable();
    event void routingState(uint8_t updated);
 }

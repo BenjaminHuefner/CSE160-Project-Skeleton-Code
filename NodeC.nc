@@ -34,6 +34,9 @@ implementation {
     components FloodC;
     Node.Flooder -> FloodC;
 
+    components LinkRoutingC;
+    Node.LinkRouting -> LinkRoutingC;
+
     components IPC;
     Node.IP ->IPC;
 
