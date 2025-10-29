@@ -27,6 +27,8 @@ implementation{
    components new HashmapC(uint16_t, 20);
    FloodP.Hashmap -> HashmapC;
    components new QueueC(pack, 20);
+   components new QueueC(pack, 20)as Queue2C;
+   FloodP.Queue2 -> Queue2C;
 
    FloodP.Queue -> QueueC;
   

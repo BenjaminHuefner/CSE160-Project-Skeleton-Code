@@ -40,11 +40,13 @@ implementation{
 
    task void sendTask(){
     if(!call Queue.empty()){
+        dbg(GENERAL_CHANNEL,"IP Send Task\n");
          if(routingState){
             // dbg(GENERAL_CHANNEL,"test\n");
             linkPackage= call Queue.head();
             call Queue.dequeue();
             call SimpleSend.send(linkPackage,linkPackage.dest);
+            dbg(GENERAL_CHANNEL, "%d IP Sending to %d\n",nodeID,linkPackage.dest);
             if(call IPTimer.isRunning() == FALSE){
                call IPTimer.startOneShot( (call Random.rand16() %300));
             }

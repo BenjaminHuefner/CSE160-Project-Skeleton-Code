@@ -6,6 +6,7 @@ module FloodP{
 
    uses interface SimpleSend;
    uses interface Queue<pack>;
+   uses interface Queue<pack> as Queue2;
    uses interface Timer<TMilli> as floodTimer;
 
    uses interface NeighborDiscovery;
@@ -22,7 +23,7 @@ implementation{
     pack floodPackage;
     pack linkPackage;
     uint16_t numNeighbor=0;
-    uint16_t seqNum=0;
+    uint16_t seqNum=1;
     uint16_t nodeID;
     uint16_t currNeighbor;
     uint8_t prevNeighbor;
@@ -49,22 +50,28 @@ implementation{
             // dbg(GENERAL_CHANNEL,"test\n");
             linkPackage= call Queue.head();
             call Queue.dequeue();
+            floodPackage= *(pack*) linkPackage.payload;
             numNeighbor= call NeighborDiscovery.numNeighbors();
             prevNeighbor=linkPackage.src;
             while(numNeighbor>0){
                currNeighbor= call NeighborDiscovery.NeighborNum(numNeighbor-1);
+               
                if (currNeighbor!=prevNeighbor){
                   linkPackage.src= nodeID;
                   linkPackage.dest=currNeighbor;
                   
-                  dbg(FLOODING_CHANNEL, "%d Flood Neighbor %d\n", nodeID,currNeighbor);
+                  // dbg(FLOODING_CHANNEL, "%d Flood Neighbor %d\n", nodeID,currNeighbor);
+                  if(floodPackage.src==2){
+                  dbg(FLOODING_CHANNEL, "Node %d flooding to %d packet originally from %d with seq %d\n",nodeID, currNeighbor,floodPackage.src,floodPackage.seq);
+
+                  }
                   call SimpleSend.send(linkPackage,linkPackage.dest);
                }
 
                numNeighbor--;
             }
             if(call floodTimer.isRunning() == FALSE){
-               call floodTimer.startOneShot( (call Random.rand16() %300));
+               call floodTimer.startOneShot( (call Random.rand16() %300)+1000);
             }
          }
       }
@@ -73,10 +80,13 @@ implementation{
       post sendFlood();
    }
    task void floodTask(){
-      
+      linkPackage= call Queue2.head();
+      call Queue2.dequeue();
+      floodPackage= *(pack*) linkPackage.payload;
       
       if(call Hashmap.contains(floodPackage.src)){
          if(call Hashmap.get(floodPackage.src)>=floodPackage.seq){
+            dbg(FLOODING_CHANNEL,"Old Packet from %d with seq %d\n",floodPackage.src,floodPackage.seq);
             old=1;
          }
       }
@@ -86,7 +96,10 @@ implementation{
          // numNeighbor= call NeighborDiscovery.numNeighbors();
          linkPackage.TTL--;
          call Queue.enqueue(linkPackage);
-         post sendFlood();
+         if(call floodTimer.isRunning() == FALSE){
+               call floodTimer.startOneShot( (call Random.rand16() %300)+1000);
+            }
+         // post sendFlood();
          // while(numNeighbor>0){
          //    currNeighbor= call NeighborDiscovery.NeighborNum(numNeighbor-1);
          //    if (currNeighbor!=linkPackage.src){
@@ -99,7 +112,9 @@ implementation{
          // }
          //if(floodPackage.dest==nodeID){
             if(!call Hashmap.get(floodPackage.src)>=floodPackage.seq){
+               // dbg(GENERAL_CHANNEL,"test\n");
                if(floodPackage.protocol==2){
+                  // dbg(GENERAL_CHANNEL,"test2\n");
                   signal Flood.messageRecieved(floodPackage.payload);
                   
                   return;
@@ -124,6 +139,7 @@ implementation{
       if(updated==0){
          neighborState=0;
       }else{
+         nodeID=updated;
          neighborState=1;
          // dbg(GENERAL_CHANNEL,"test\n");
          post sendFlood();
@@ -137,7 +153,7 @@ implementation{
       linkPackage=msg;
       temp=msg.payload;
       floodPackage= *(pack*) temp;
-      
+      call Queue2.enqueue(linkPackage);
       post floodTask();
       
       return SUCCESS;
@@ -145,9 +161,11 @@ implementation{
 
    command error_t Flood.startFlood(uint8_t src, uint8_t dest, uint8_t *payload){
       nodeID=src;
+      // dbg(GENERAL_CHANNEL, "Node %d starting flood to %d\n",src,dest);
       makePack(&floodPackage, src, dest, 1, 2, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
       temp= &floodPackage;
       makePack(&linkPackage,src,dest,20,8,seqNum, temp,PACKET_MAX_PAYLOAD_SIZE);
+      call Queue2.enqueue(linkPackage);
       post floodTask();
    }
 

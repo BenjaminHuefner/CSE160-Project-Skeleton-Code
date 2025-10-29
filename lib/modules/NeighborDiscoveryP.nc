@@ -45,7 +45,7 @@ implementation{
       makePack(&broadcastPackage, nodeID, (AM_BROADCAST_ADDR), 1, 6, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
       if(count==3){
          // dbg(GENERAL_CHANNEL,"test\n");
-         signal NeighborDiscovery.neighborUpdate(1);
+         signal NeighborDiscovery.neighborUpdate(nodeID);
       }
       call SimpleSend.send(broadcastPackage,(AM_BROADCAST_ADDR));
       
@@ -63,6 +63,10 @@ implementation{
          dbg(NEIGHBOR_CHANNEL, "Last seqNum from this neighbor %d\n", temp);
          if(count-temp>3){
             delete(call List.get(i));
+            if(count>=3){
+            // dbg(GENERAL_CHANNEL,"test\n");
+               signal NeighborDiscovery.neighborUpdate(nodeID);
+            }
          }
       }
       dbg(NEIGHBOR_CHANNEL,"updated\n");
@@ -116,6 +120,10 @@ implementation{
             temp = call List.popback();
          }
          call List.pushfront(source);
+         if(count>=3){
+            // dbg(GENERAL_CHANNEL,"test\n");
+            signal NeighborDiscovery.neighborUpdate(nodeID);
+         }
       }else{
          dbg(NEIGHBOR_CHANNEL, "%d Neighbor %d in table\n", nodeID,source);
          //testing delete

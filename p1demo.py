@@ -17,8 +17,8 @@ def main():
     s.bootAll();
 
     # Add the main channels. These channels are declared in includes/channels.h
-    s.addChannel(s.COMMAND_CHANNEL);
-    s.addChannel(s.GENERAL_CHANNEL);
+    # s.addChannel(s.COMMAND_CHANNEL);
+    # s.addChannel(s.GENERAL_CHANNEL);
     s.addChannel(s.FLOODING_CHANNEL);
     # s.addChannel(s.NEIGHBOR_CHANNEL);
 
@@ -28,17 +28,17 @@ def main():
     s.runTime(1);
 
     
-    s.ping(3, 19, "Test1");
+    s.ping(2, 3, "Test1");
     s.runTime(10);
 
-    s.moteOff(5);
+    # s.moteOff(5);
     s.runTime(100);
 
     s.ping(4, 7, "Test2");
     s.runTime(1);
 
     s.neighborDMP(6);
-    s.runTime(1);
+    s.runTime(10);
 
 
 

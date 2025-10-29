@@ -5,7 +5,7 @@ maybe implement new neighbor discovery reliability score
 -------------------change flooding packets to use flooding protocol    10m
 -------------------flooding forwards linkstate packets to linkRouting  10m
 -------------------node forwards neigbor discovery and flooding packets to respective modules, but IP gets ping    10m
-link state packets get forwarded by flooding to Link routing, IP uses link routing for routing table for ping. 20m
+-------------------link state packets get forwarded by flooding to Link routing, IP uses link routing for routing table for ping. 20m
 flooding, linkstate need to wait for neighbor discovery to be settled before posting their tasks, IP needs 
 to wait for linkstate to be done before sending pings.  40m
 Linkstate creates packets (increasing sequence number) and floods them  90m

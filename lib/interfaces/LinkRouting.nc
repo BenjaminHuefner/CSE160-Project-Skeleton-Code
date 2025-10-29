@@ -2,7 +2,6 @@
 #include "../../includes/packet.h"
 
 interface LinkRouting{
-   command error_t sendState(pack msg, uint16_t nodeID);
-   command error_t routingTable(uint8_t dest);
+   command uint8_t routingTable(uint8_t dest);
    event void routingState(uint8_t updated);
 }

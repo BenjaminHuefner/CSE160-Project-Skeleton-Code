@@ -6,18 +6,19 @@ configuration LinkRoutingC{
 
 implementation{
    components LinkRoutingP;
-   LinkRouting = LinkRoutingP.SimpleSend;
+   LinkRouting = LinkRoutingP.LinkRouting;
 
    components new TimerMilliC() as sendTimer;
    components RandomC as Random;
+   components NeighborDiscoveryC;
+    LinkRoutingP.NeighborDiscovery -> NeighborDiscoveryC;
+    components FloodC;
+    LinkRoutingP.Flood->FloodC;
+    
 
    //Timers
    LinkRoutingP.sendTimer -> sendTimer;
    LinkRoutingP.Random -> Random;
 
 
-   //Lists
-   components new QueueC(sendInfo*, 20);
-
-   LinkRoutingP.Queue -> QueueC;
 }
