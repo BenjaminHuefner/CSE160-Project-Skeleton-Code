@@ -32,7 +32,6 @@ implementation{
     uint8_t tentativeCount=0;
     uint8_t confirmed[256][2]={0};
 
-    task void recievedData(){}
     task void sendLinkState(){
         // dbg(GENERAL_CHANNEL,"LinkRouting: Sending Link State\n");
         numNeighbors= call NeighborDiscovery.numNeighbors();
@@ -49,6 +48,8 @@ implementation{
     void dijkstra(){
         for(i=1;i<=maxNode;i++){
             confirmed[i][0]=0;
+            confirmed[i][1]=0;
+            tentative[i][0]=0;
             tentative[i][1]=0;
         }
         confirmed[nodeID][0]=0;
@@ -57,8 +58,8 @@ implementation{
         cost=confirmed[next][0];
 
         for(i=1;i<=maxNode;i++){
-            if(graph[next][i]==1){
-                if(tentative[i][1]==0 && confirmed[i][0]==0){
+            if(graph[next][i]==1 && graph[i][next]==1){
+                if(tentative[i][1]==0 && confirmed[i][1]==0){
                     tentative[i][0]=cost+1;
                     tentative[i][1]=i;
                     tentativeCount++;
@@ -76,6 +77,13 @@ implementation{
                     }
                 }
             }
+            if(minCost==0){
+                tentative[minNode][0]=0;
+                tentative[minNode][1]=0;
+                tentativeCount--;
+                dbg(GENERAL_CHANNEL,"Dijkstra");
+                continue;
+            }
             if(minNode==0){
                 break;
             }
@@ -87,7 +95,7 @@ implementation{
             next=minNode;
             cost=confirmed[next][0];
             for(i=1;i<=maxNode;i++){
-                if(graph[next][i]==1){
+                if(graph[next][i]==1 && graph[i][next]==1){
                     if(tentative[i][1]==0 && confirmed[i][0]==0){
                         tentative[i][0]=cost+1;
                         tentative[i][1]=confirmed[next][1];
@@ -107,6 +115,9 @@ implementation{
         dijkstra();
         for(i=1;i<=maxNode;i++){
             routing[i]=confirmed[i][1];
+            if(i==nodeID){
+                routing[i]=nodeID;
+            }
         }
         
         if(state==2){
@@ -126,6 +137,10 @@ implementation{
                 }
             }
             
+        }
+        dbg(GENERAL_CHANNEL,"Routing Table for Node %d:\n",nodeID);
+        for(i=1;i<=maxNode;i++){
+            dbg(GENERAL_CHANNEL,"Dest: %d Next Hop: %d\n",i,routing[i]);
         }
     }
    event void NeighborDiscovery.neighborUpdate(uint8_t updated){

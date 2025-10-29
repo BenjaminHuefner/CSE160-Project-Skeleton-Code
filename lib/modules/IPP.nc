@@ -40,11 +40,14 @@ implementation{
 
    task void sendTask(){
     if(!call Queue.empty()){
-        dbg(GENERAL_CHANNEL,"IP Send Task\n");
+        // dbg(GENERAL_CHANNEL,"IP Send Task\n");
          if(routingState){
             // dbg(GENERAL_CHANNEL,"test\n");
             linkPackage= call Queue.head();
             call Queue.dequeue();
+            IPPackage= *(pack*) linkPackage.payload;
+            nextDest=call LinkRouting.routingTable(IPPackage.dest);
+            linkPackage.dest=nextDest;
             call SimpleSend.send(linkPackage,linkPackage.dest);
             dbg(GENERAL_CHANNEL, "%d IP Sending to %d\n",nodeID,linkPackage.dest);
             if(call IPTimer.isRunning() == FALSE){
@@ -76,9 +79,8 @@ implementation{
             }
             
         }else{
-            nextDest=call LinkRouting.routingTable(IPPackage.dest);
+            
             linkPackage.src=nodeID;
-            linkPackage.dest=nextDest;
             call Queue.enqueue(linkPackage);
             post sendTask();
         }
