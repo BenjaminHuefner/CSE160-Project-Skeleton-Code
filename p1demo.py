@@ -25,23 +25,28 @@ def main():
     # After sending a ping, simulate a little to prevent collision.
     s.runTime(1);
     s.neighborDMP(5);
-    s.runTime(1);
-
-    
-    s.ping(2, 3, "Test1");
-    s.runTime(10);
-
-    # s.moteOff(5);
     s.runTime(100);
 
-    s.ping(4, 7, "Test2");
-    s.runTime(1);
-
-    s.neighborDMP(6);
+    
+    s.ping(1, 9, "Test1");
     s.runTime(10);
 
-    s.routeDMP(4);
-    s.runTime(1);
+    s.runTime(50);
+    
+    # s.routeDMP(4);
+    # s.runTime(10);
+
+    # s.moteOff(5);
+    # s.runTime(150);
+
+    # s.ping(4, 7, "Test2");
+    # s.runTime(1);
+
+    # s.neighborDMP(6);
+    # s.runTime(10);
+
+    # s.routeDMP(4);
+    # s.runTime(1);
 
 
 

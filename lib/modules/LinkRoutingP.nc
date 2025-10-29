@@ -18,12 +18,19 @@ implementation{
     uint8_t maxNode=7;
     uint8_t numNeighbors=0;
     uint8_t state=0;
+    uint8_t next;
+    uint8_t cost;
+    uint8_t minCost=255;
+    uint8_t minNode=0;
     uint8_t i=0;
     uint8_t j=0;
     uint8_t routing[256]={0};
     uint8_t selfPayload[10]={0};
     uint8_t otherPayload[10];
     uint8_t graph[256][256]={0};
+    uint8_t tentative[256][2]={0};
+    uint8_t tentativeCount=0;
+    uint8_t confirmed[256][2]={0};
 
     task void recievedData(){}
     task void sendLinkState(){
@@ -39,7 +46,68 @@ implementation{
         call sendTimer.startOneShot(30000);
         
     }
+    void dijkstra(){
+        for(i=1;i<=maxNode;i++){
+            confirmed[i][0]=0;
+            tentative[i][1]=0;
+        }
+        confirmed[nodeID][0]=0;
+        confirmed[nodeID][1]=nodeID;
+        next=nodeID;
+        cost=confirmed[next][0];
+
+        for(i=1;i<=maxNode;i++){
+            if(graph[next][i]==1){
+                if(tentative[i][1]==0 && confirmed[i][0]==0){
+                    tentative[i][0]=cost+1;
+                    tentative[i][1]=i;
+                    tentativeCount++;
+                }
+            }
+        }
+        while(tentativeCount>0){
+            minCost=255;
+            minNode=0;
+            for(i=1;i<=maxNode;i++){
+                if(tentative[i][1]!=0){
+                    if(tentative[i][0]<minCost){
+                        minCost=tentative[i][0];
+                        minNode=i;
+                    }
+                }
+            }
+            if(minNode==0){
+                break;
+            }
+            confirmed[minNode][0]=minCost;
+            confirmed[minNode][1]=tentative[minNode][1];
+            tentative[minNode][0]=0;
+            tentative[minNode][1]=0;
+            tentativeCount--;
+            next=minNode;
+            cost=confirmed[next][0];
+            for(i=1;i<=maxNode;i++){
+                if(graph[next][i]==1){
+                    if(tentative[i][1]==0 && confirmed[i][0]==0){
+                        tentative[i][0]=cost+1;
+                        tentative[i][1]=confirmed[next][1];
+                        tentativeCount++;
+                    }else{
+                        if(tentative[i][0]>cost+1){
+                            tentative[i][0]=cost+1;
+                            tentative[i][1]=confirmed[next][1];
+                        }
+                    }
+                }
+            }
+        }
+
+    }
     task void buildTable(){
+        dijkstra();
+        for(i=1;i<=maxNode;i++){
+            routing[i]=confirmed[i][1];
+        }
         
         if(state==2){
             state=0;
@@ -47,7 +115,7 @@ implementation{
         }
     }
     command uint8_t LinkRouting.routingTable(uint8_t dest){
-        return 3;
+        return routing[dest];
     }
     command void LinkRouting.printTable(){
         dbg(GENERAL_CHANNEL,"Graph for Node %d:\n",nodeID);
@@ -67,6 +135,7 @@ implementation{
             maxNode=nodeID;
         }
         // signal LinkRouting.routingState(1);
+        
         state=1;
         signal LinkRouting.routingState(0);
         post sendLinkState();
@@ -83,6 +152,7 @@ implementation{
         // }
         
         if((state==0||state==2)&&nodeID!=0){
+            
             state=1;
             signal LinkRouting.routingState(0);
             post sendLinkState();
