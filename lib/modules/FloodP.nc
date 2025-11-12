@@ -163,7 +163,7 @@ implementation{
       // dbg(GENERAL_CHANNEL, "Node %d starting flood to %d\n",src,dest);
       makePack(&floodPackage, src, dest, 1, 2, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
       temp= &floodPackage;
-      makePack(&linkPackage,src,dest,20,8,seqNum, temp,PACKET_MAX_PAYLOAD_SIZE);
+      makePack(&linkPackage,src,dest,110,8,seqNum, temp,PACKET_MAX_PAYLOAD_SIZE);
       call Queue2.enqueue(linkPackage);
       post floodTask();
    }

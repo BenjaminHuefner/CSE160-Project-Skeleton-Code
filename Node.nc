@@ -34,6 +34,7 @@ implementation{
    uint16_t seqNum=0;
    uint16_t numNeighbors=0;
    uint8_t *emptyPayload=&seqNum;
+   uint16_t i=0;
 
    // Prototypes
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
@@ -101,9 +102,22 @@ implementation{
 
    event void CommandHandler.printDistanceVector(){}
 
-   event void CommandHandler.setTestServer(){}
+   event void CommandHandler.setTestServer(uint16_t port){
+      dbg(GENERAL_CHANNEL, "TEST SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
+   }
 
-   event void CommandHandler.setTestClient(){}
+   event void CommandHandler.setTestClient(uint16_t port, uint16_t dest, uint16_t destport, uint16_t transfer){
+      dbg(GENERAL_CHANNEL, "TEST CLIENT EVENT %d to %d:%d from port %d\n",TOS_NODE_ID,dest,destport,port);
+      while(i<transfer){
+         if(transfer - i >= 5){
+         dbg(GENERAL_CHANNEL, "%d,%d,%d,%d,%d\n", i,i+1,i+2,i+3,i+4);
+         i+=5;
+         } else {
+         dbg(GENERAL_CHANNEL, "%d\n", i);
+         i++;
+         }
+      }
+   }
 
    event void CommandHandler.setAppServer(){}
 

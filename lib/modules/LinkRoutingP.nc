@@ -122,6 +122,7 @@ implementation{
         
         if(state==2){
             state=0;
+            dbg(GENERAL_CHANNEL,"LinkRouting: Routing Table Built for %d\n",nodeID);
             signal LinkRouting.routingState(1);
         }
     }
@@ -174,6 +175,7 @@ implementation{
         }
         if(call sendTimer.isRunning()){
             call sendTimer.stop();
+            // dbg(GENERAL_CHANNEL,"LinkRouting: Timer Stopped\n");
         }
             i=otherPayload[1];
             for(i=0;i<maxNode;i++){
