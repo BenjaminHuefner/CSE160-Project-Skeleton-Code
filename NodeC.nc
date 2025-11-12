@@ -40,6 +40,9 @@ implementation {
     components IPC;
     Node.IP ->IPC;
 
+    components TCPC;
+    Node.TCP -> TCPC;
+    
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;
 }

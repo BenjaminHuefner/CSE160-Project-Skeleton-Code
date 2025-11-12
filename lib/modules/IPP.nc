@@ -90,6 +90,7 @@ implementation{
     }
    
    event void LinkRouting.routingState(uint8_t updated){
+    signal IP.sendState(updated);
         if(updated){
             routingState=1;
             post sendTask();
@@ -117,6 +118,28 @@ implementation{
       
     return SUCCESS;
 
+   }
+
+   command error_t IP.sendTCP(uint8_t src , uint16_t dest, uint8_t* payload){
+    nodeID=src;
+    makePack(&IPPackage, src, dest, 5, 4, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
+      temp= &IPPackage;
+      seqNum--;
+      makePack(&linkPackage,src,dest,20,6,seqNum, temp,PACKET_MAX_PAYLOAD_SIZE);
+      call Queue.enqueue(linkPackage);
+      post sendTask();
+    return SUCCESS;
+   }
+
+   command error_t IP.readTCP(pack msg, uint8_t ownID){
+    nodeID=ownID;
+    linkPackage=msg;
+    temp=msg.payload;
+    IPPackage= *(pack*) temp;
+    signal IP.tcpReceived(IPPackage.payload);
+    // dbg(GENERAL_CHANNEL, "TCP Packet Received from %d\n",IPPackage.src);
+    // dbg(GENERAL_CHANNEL, "Package Payload: %s\n", IPPackage.payload);
+    return SUCCESS;
    }
 
 }

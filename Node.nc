@@ -20,6 +20,7 @@ module Node{
    uses interface Flood as Flooder;
    uses interface LinkRouting;
    uses interface IP;
+   uses interface TCP;
 
    uses interface SplitControl as AMControl;
    uses interface Receive;
@@ -61,6 +62,8 @@ implementation{
    event void Flooder.messageRecieved(uint8_t* pay){}
    event void NeighborDiscovery.neighborUpdate(uint8_t updated){}
    event void LinkRouting.routingState(uint8_t updated){}
+   event void IP.sendState(uint8_t updated){}
+   event void IP.tcpReceived(uint8_t* payload){}
 
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
       if(len==sizeof(pack)){
@@ -76,6 +79,9 @@ implementation{
             }
             if(myMsg->protocol==0 || myMsg->protocol==1){
                call IP.readPing(*myMsg, TOS_NODE_ID);
+            }
+            if(myMsg->protocol==4){
+               call IP.readTCP(*myMsg, TOS_NODE_ID);
             }
          }
          return msg;
@@ -103,20 +109,15 @@ implementation{
    event void CommandHandler.printDistanceVector(){}
 
    event void CommandHandler.setTestServer(uint16_t port){
-      dbg(GENERAL_CHANNEL, "TEST SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
+      // dbg(GENERAL_CHANNEL, "TEST SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
+      call TCP.testServer(TOS_NODE_ID, port);
+
    }
 
    event void CommandHandler.setTestClient(uint16_t port, uint16_t dest, uint16_t destport, uint16_t transfer){
-      dbg(GENERAL_CHANNEL, "TEST CLIENT EVENT %d to %d:%d from port %d\n",TOS_NODE_ID,dest,destport,port);
-      while(i<transfer){
-         if(transfer - i >= 5){
-         dbg(GENERAL_CHANNEL, "%d,%d,%d,%d,%d\n", i,i+1,i+2,i+3,i+4);
-         i+=5;
-         } else {
-         dbg(GENERAL_CHANNEL, "%d\n", i);
-         i++;
-         }
-      }
+      // dbg(GENERAL_CHANNEL, "TEST CLIENT EVENT %d to %d:%d from port %d\n",TOS_NODE_ID,dest,destport,port);
+      call TCP.testClient(TOS_NODE_ID, port, dest, destport, transfer);
+      
    }
 
    event void CommandHandler.setAppServer(){}
