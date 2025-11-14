@@ -63,7 +63,7 @@ implementation{
    event void NeighborDiscovery.neighborUpdate(uint8_t updated){}
    event void LinkRouting.routingState(uint8_t updated){}
    event void IP.sendState(uint8_t updated){}
-   event void IP.tcpReceived(uint8_t* payload){}
+   event void IP.tcpReceived(uint8_t src, uint8_t* payload){}
 
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
       if(len==sizeof(pack)){

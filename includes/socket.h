@@ -14,6 +14,9 @@ enum socket_state{
     ESTABLISHED,
     SYN_SENT,
     SYN_RCVD,
+    FIN_WAIT1,
+    TIME_WAIT,
+    LAST_ACK,
 };
 
 
@@ -42,6 +45,7 @@ typedef struct socket_store_t{
     uint8_t lastWritten;
     uint8_t lastAck;
     uint8_t lastSent;
+    uint8_t timeSent[SOCKET_BUFFER_SIZE];
 
     // This is the receiver portion
     uint8_t rcvdBuff[SOCKET_BUFFER_SIZE];
@@ -51,6 +55,10 @@ typedef struct socket_store_t{
 
     uint16_t RTT;
     uint8_t effectiveWindow;
+    uint8_t socketState;// 0 for server, 1 for client
+    uint16_t testTransferFin;
+    uint16_t testTransferCurr;
+    uint8_t nodeDest;
 }socket_store_t;
 
 #endif

@@ -49,7 +49,7 @@ implementation{
             nextDest=call LinkRouting.routingTable(IPPackage.dest);
             linkPackage.dest=nextDest;
             call SimpleSend.send(linkPackage,linkPackage.dest);
-            dbg(GENERAL_CHANNEL, "%d IP Sending to %d\n",nodeID,linkPackage.dest);
+            // dbg(GENERAL_CHANNEL, "%d IP Sending to %d\n",nodeID,linkPackage.dest);
             if(call IPTimer.isRunning() == FALSE){
                call IPTimer.startOneShot( (call Random.rand16() %300));
             }
@@ -125,18 +125,25 @@ implementation{
     makePack(&IPPackage, src, dest, 5, 4, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
       temp= &IPPackage;
       seqNum--;
-      makePack(&linkPackage,src,dest,20,6,seqNum, temp,PACKET_MAX_PAYLOAD_SIZE);
+      makePack(&linkPackage,src,dest,20,4,seqNum, temp,PACKET_MAX_PAYLOAD_SIZE);
       call Queue.enqueue(linkPackage);
       post sendTask();
     return SUCCESS;
    }
 
    command error_t IP.readTCP(pack msg, uint8_t ownID){
+    // dbg(GENERAL_CHANNEL, "IP Read TCP Called \n");
     nodeID=ownID;
     linkPackage=msg;
     temp=msg.payload;
     IPPackage= *(pack*) temp;
-    signal IP.tcpReceived(IPPackage.payload);
+    if(IPPackage.dest!=nodeID){
+        linkPackage.src=nodeID;
+        call Queue.enqueue(linkPackage);
+        post sendTask();
+        return SUCCESS;
+    }
+    signal IP.tcpReceived(IPPackage.src, IPPackage.payload);
     // dbg(GENERAL_CHANNEL, "TCP Packet Received from %d\n",IPPackage.src);
     // dbg(GENERAL_CHANNEL, "Package Payload: %s\n", IPPackage.payload);
     return SUCCESS;

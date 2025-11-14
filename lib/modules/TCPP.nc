@@ -6,6 +6,8 @@ module TCPP{
    provides interface TCP;
 
    uses interface Timer<TMilli> as baseTimer;
+   uses interface Queue<pack>;
+   uses interface Queue<uint8_t> as Queue2;
 
    uses interface IP;
    uses interface Packet;
@@ -16,10 +18,25 @@ module TCPP{
 implementation{
     uint16_t i[10];
     uint8_t nodeID;
+    uint8_t state=0;
+    uint8_t finSeq=0;
+    uint8_t activeSocket=0;
+    uint16_t temp;
+    uint8_t byteSent;
+    uint8_t* dummy= &nodeID;
     socket_store_t sockets[10];
-    pack packet;
+    socket_store_t* currentSocket;
+    pack sendPacket;
+    pack recvPacket;
 
-    void makePack(pack *Package, uint16_t srcport, uint16_t destport, uint16_t flags, uint16_t advWindow, uint16_t seq, uint8_t* byte){
+    // flag 0 = nothing
+    // flag 1 = SYN
+    // flag 2 = ACK
+    // flag 3 = SYN-ACK
+    // flag 4 = FIN
+    // flag 5 = FIN-ACK
+
+    void makePack(pack *Package, uint16_t srcport, uint16_t destport, uint16_t flags, uint8_t seq, uint8_t advWindow, uint8_t* byte){
       Package->src = srcport;
       Package->dest = destport;
       Package->TTL = flags;
@@ -28,24 +45,78 @@ implementation{
       memcpy(Package->payload, byte, 8);
    }
 
-   void task sendSyn(){
+   void sendSyn(uint8_t dest, uint16_t destport, uint16_t srcport){
+    temp=call Random.rand16();
+    // dbg(GENERAL_CHANNEL, "%d\n",temp);
+    temp=temp>>8;
+    // dbg(GENERAL_CHANNEL, "%d\n",temp);
+    sockets[srcport].lastSent = (uint8_t) temp;
+    sockets[srcport].lastAck= (uint8_t) temp-1;
+    sockets[srcport].lastWritten= (uint8_t) temp;
+      makePack(&sendPacket, srcport, destport, 1,temp, 0, dummy);
+      call IP.sendTCP(nodeID, dest, &sendPacket);
+
+       dbg(GENERAL_CHANNEL, "SYN Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
 
    }
 
+    void sendAck(uint8_t dest, uint16_t destport, uint16_t srcport){
+        byteSent=sockets[srcport].nextExpected;
+      makePack(&sendPacket, srcport, destport, 2,0, 0, &byteSent);
+      call IP.sendTCP(nodeID, dest, &sendPacket); 
+       dbg(GENERAL_CHANNEL, "ACK Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
+    }
+
+    void sendSynAck(uint8_t dest, uint16_t destport, uint16_t srcport){
+        byteSent=sockets[srcport].nextExpected;
+      temp=call Random.rand16();
+    // dbg(GENERAL_CHANNEL, "%d\n",temp);
+        temp=temp>>8;
+        // dbg(GENERAL_CHANNEL, "%d\n",temp);
+        sockets[srcport].lastSent = (uint8_t) temp;
+        sockets[srcport].lastAck= (uint8_t) temp-1;
+        sockets[srcport].lastWritten= (uint8_t) temp;
+        makePack(&sendPacket, srcport, destport, 3,temp, 0, &byteSent);
+        call IP.sendTCP(nodeID, dest, &sendPacket);
+        
+        dbg(GENERAL_CHANNEL, "SYN-ACK Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
+    }
+
+    void sendFin(uint8_t dest, uint16_t destport, uint16_t srcport){
+        finSeq = sockets[srcport].lastWritten +1;
+      makePack(&sendPacket, srcport, destport, 4,finSeq, 0, dummy);
+      call IP.sendTCP(nodeID, dest, &sendPacket); 
+       dbg(GENERAL_CHANNEL, "FIN Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
+    }
+
+    void sendFinAck(uint8_t dest, uint16_t destport, uint16_t srcport){
+        finSeq = sockets[srcport].lastWritten +1;
+        byteSent=sockets[srcport].nextExpected;
+      makePack(&sendPacket, srcport, destport, 5,finSeq, 0, &byteSent);
+      call IP.sendTCP(nodeID, dest, &sendPacket); 
+       dbg(GENERAL_CHANNEL, "FIN-ACK Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
+    }
 
 
     command error_t TCP.testServer(uint8_t src, uint8_t port){
         dbg(GENERAL_CHANNEL, "TEST SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
         nodeID=src;
         sockets[port].state = LISTEN;
-    };
+        sockets[port].socketState = 0; // Server Socket
+        return SUCCESS;
+    }
 
     command error_t TCP.testClient(uint8_t src, uint8_t srcport, uint8_t dest, uint8_t destport, uint16_t transfer){
-        nodeID=src;
-        sockets[srcport].state = SYN_SENT;
-        {
-
         dbg(GENERAL_CHANNEL, "TEST CLIENT EVENT %d to %d:%d from port %d\n",src,dest,destport,srcport);
+        nodeID=src;
+        sendSyn(dest, destport, srcport);
+        sockets[srcport].nodeDest = dest;
+        sockets[srcport].dest.port = destport;
+        sockets[srcport].state = SYN_SENT;
+        sockets[srcport].testTransferFin = transfer;
+        sockets[srcport].testTransferCurr = 0;
+        sockets[srcport].socketState = 1; // Client Socket
+
         // i[srcport]=0;
         // while(i[srcport]<transfer){
         //  if(transfer - i[srcport] >= 5){
@@ -55,17 +126,167 @@ implementation{
         //  dbg(GENERAL_CHANNEL, "%d\n", i[srcport]);
         //  i[srcport]++;
         //  }
-      }
-    };
+
+        return SUCCESS;
+      
+    }
+
+    task void processData(){
+        if(!call Queue.empty()){
+            pack p = call Queue.dequeue();
+            uint8_t orgSrc = call Queue2.dequeue();
+            // dbg(GENERAL_CHANNEL, "Processing Data at %d\n",TOS_NODE_ID);
+            // dbg(GENERAL_CHANNEL, "From %d to %d\n",p.src,p.dest);
+            // dbg(GENERAL_CHANNEL, "Flags: %d Seq: %d AdvWindow: %d\n",p.TTL,p.seq,p.protocol);
+            currentSocket=&sockets[p.dest];
+            switch(p.TTL){
+                case 0: //DATA
+                    // Handle Data Packet
+                    break;
+                case 1: //SYN
+                    // Handle SYN Packet
+                    switch(currentSocket->state){
+                        case LISTEN:
+                            dbg(GENERAL_CHANNEL, "SYN Received at %d from listening \n",TOS_NODE_ID);
+                            currentSocket->state = SYN_RCVD;
+                            sendSynAck(orgSrc, p.src, p.dest);
+                            break;
+                        case SYN_SENT:
+                            dbg(GENERAL_CHANNEL, "SYN Received at %d from syn_sent \n",TOS_NODE_ID);
+                            currentSocket->state = SYN_RCVD;
+                            sendSynAck(orgSrc, p.src, p.dest);
+                            break;
+                    }
+                    break;
+                case 2: //ACK
+                    // Handle ACK Packet
+                    switch(currentSocket->state){
+        
+                        case SYN_RCVD:
+                            // if(*(p.payload) == currentSocket->lastAck + 1){
+                                currentSocket->state = ESTABLISHED;
+                                currentSocket->nodeDest = orgSrc;
+                                currentSocket->dest.port = p.src;
+                                // dbg(GENERAL_CHANNEL, "test\n");
+                                dbg(GENERAL_CHANNEL, "Connection Established at %d\n",TOS_NODE_ID);
+                            // }
+                            break;
+                        case ESTABLISHED:
+                            // Handle Data Acknowledgment
+                            break;
+
+                        case LAST_ACK:
+                            // if(*(p.payload) == currentSocket->lastAck + 1){
+                                currentSocket->state = CLOSED;
+                                dbg(GENERAL_CHANNEL, "Connection Closed at %d\n",TOS_NODE_ID);
+                            // }
+                            break;
+                    }
+                    break;
+                case 3: //SYN-ACK
+                    // Handle SYN-ACK Packet
+                    switch(currentSocket->state){
+                        case SYN_SENT:
+                        // dbg(GENERAL_CHANNEL, "test\n");
+                        // if(*(p.payload) == currentSocket->lastAck + 1){
+                            // dbg(GENERAL_CHANNEL, "test2\n");
+                            currentSocket->state = ESTABLISHED;
+                                currentSocket->nodeDest = orgSrc;
+                                currentSocket->dest.port = p.src;
+                            sendAck(orgSrc, p.src, p.dest);
+                            dbg(GENERAL_CHANNEL, "Connection Established at %d\n",TOS_NODE_ID);
+                            // currentSocket->state = ESTABLISHED;
+                            // sendAck(p.src, p.src, p.dest);
+                            // dbg(GENERAL_CHANNEL, "Connection Established at %d\n",TOS_NODE_ID);
+                            break;
+                        // }
+                    }
+                    break;
+                case 4: //FIN
+                    // Handle FIN Packet
+                    switch(currentSocket->state){
+                        case ESTABLISHED:
+                            currentSocket->state = LAST_ACK;
+                            sendFinAck(orgSrc, p.src, p.dest);
+                            break;
+                    }
+                    break;
+                case 5: //FIN-ACK
+                    // Handle FIN-ACK Packet
+                    if(currentSocket->state == FIN_WAIT1){
+                        // currentSocket->state = TIME_WAIT;
+                        // if(p.seq == currentSocket->lastWritten + 1){
+                            currentSocket->state = TIME_WAIT;
+                            sendAck(orgSrc, p.src, p.dest);
+                            dbg(GENERAL_CHANNEL, "Connection Closed at %d\n",TOS_NODE_ID);
+                        // }
+                    }
+                    break;
+
+                
+            }
+        }
+   }
+
+   task void sendTestData(){
+    if(sockets[activeSocket].state == ESTABLISHED && sockets[activeSocket].socketState == 1){
+        // Send Data Packet
+        if(sockets[activeSocket].testTransferCurr < sockets[activeSocket].testTransferFin){
+            sockets[activeSocket].sendBuff[sockets[activeSocket].lastWritten+1] = sockets[activeSocket].testTransferCurr;
+            sockets[activeSocket].lastWritten++;
+            sockets[activeSocket].testTransferCurr++;
+        }
+        makePack(&sendPacket, activeSocket, sockets[activeSocket].dest.port, 0,0, 0, &sockets[activeSocket].sendBuff[sockets[activeSocket].lastSent+1]);
+        call IP.sendTCP(nodeID, sockets[activeSocket].nodeDest, &sendPacket);
+        dbg(GENERAL_CHANNEL, "DATA Sent from %d:%d to %d:%d\n",TOS_NODE_ID,activeSocket ,sockets[activeSocket].nodeDest,sockets[activeSocket].dest.port);
+        sockets[activeSocket].lastSent++;
+    }
+
+    activeSocket++;
+    if(activeSocket>9){
+        activeSocket=0;
+    }
+   }
+
+   event void baseTimer.fired(){
+      post processData();
+      post sendTestData();
+   }
 
     command error_t TCP.closeClient(uint8_t src, uint16_t port, uint8_t dest, uint16_t destport){
         nodeID=src;
         dbg(GENERAL_CHANNEL, "CLOSE CLIENT EVENT %d to %d:%d from port %d\n",nodeID,dest,destport,port);
+        switch(sockets[port].state){
+          case LISTEN:
+            sockets[port].state = CLOSED;
+            dbg(GENERAL_CHANNEL, "Socket Closed at %d from Listen\n",TOS_NODE_ID);
+            break;
+            case SYN_SENT:
+            sockets[port].state = CLOSED;
+            dbg(GENERAL_CHANNEL, "Socket Closed at %d from Syn_Sent\n",TOS_NODE_ID);
+            break;
+            case SYN_RCVD:
+            sockets[port].state = FIN_WAIT1;
+            sendFin(dest, destport, port);
+            break;
+            case ESTABLISHED:
+            sockets[port].state = FIN_WAIT1;
+            sendFin(dest, destport, port);
+            break;
+        }
         // sockets[port].state = CLOSED;
     };
 
-    event void baseTimer.fired(){};
     event void IP.sendState(uint8_t updated){};
-    event void IP.tcpReceived(uint8_t* payload){};
+    event void IP.tcpReceived(uint8_t src, uint8_t* payload){
+        recvPacket= *(pack*)payload;
+        call Queue.enqueue(recvPacket);
+        call Queue2.enqueue(src);
+        post processData();
+        // dbg(GENERAL_CHANNEL, "TCP Received Event at %d\n",TOS_NODE_ID);
+        // dbg(GENERAL_CHANNEL, "From %d:%d to %d:%d\n",src,recvPacket.src,nodeID,recvPacket.dest);
+        // dbg(GENERAL_CHANNEL, "Flags: %d Seq: %d AdvWindow: %d\n",recvPacket.TTL,recvPacket.seq,recvPacket.protocol);
+
+    };
 
 }
