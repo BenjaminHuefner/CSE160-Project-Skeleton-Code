@@ -120,6 +120,10 @@ implementation{
       
    }
 
+   event void CommandHandler.closeClient(uint16_t port, uint16_t dest, uint16_t destport){
+      call TCP.closeClient(TOS_NODE_ID, port, dest, destport);
+   }
+
    event void CommandHandler.setAppServer(){}
 
    event void CommandHandler.setAppClient(){}

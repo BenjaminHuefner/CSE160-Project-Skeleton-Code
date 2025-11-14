@@ -15,6 +15,7 @@ class TestSim:
     CMD_ROUTE_DUMP=3
     CMD_TEST_SERVER=5
     CMD_TEST_CLIENT=4
+    CMD_CLOSE_CLIENT=7
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";
@@ -138,6 +139,9 @@ class TestSim:
         high_byte = (transfer >> 8) & 0xFF
         low_byte = transfer & 0xFF
         self.sendCMD(self.CMD_TEST_CLIENT, source, "{0}{1}".format(chr(srcport),chr(dest)+chr(destport)+chr(high_byte)+chr(low_byte)));
+
+    def cmdCloseClient(self, source, srcport, dest, destport):
+        self.sendCMD(self.CMD_CLOSE_CLIENT, source, "{0}{1}".format(chr(srcport),chr(dest)+chr(destport)));
 
 def main():
     s = TestSim();

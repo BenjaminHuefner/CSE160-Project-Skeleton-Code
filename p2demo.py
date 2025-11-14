@@ -27,9 +27,12 @@ def main():
     s.runTime(10);
 
     s.cmdTestServer(10, 80);
-    s.runTime(100);
+    s.runTime(10);
 
-    s.cmdTestClient(5, 1, 10, 80, 2001);
+    s.cmdCloseClient(5, 1, 10, 80);
+    s.runTime(10);
+
+    s.cmdTestClient(5, 1, 10, 80, 100);
     s.runTime(100);
     # After sending a ping, simulate a little to prevent collision.
     # s.runTime(1);
