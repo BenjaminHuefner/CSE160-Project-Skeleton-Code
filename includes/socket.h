@@ -5,7 +5,7 @@ enum{
     MAX_NUM_OF_SOCKETS = 10,
     ROOT_SOCKET_ADDR = 255,
     ROOT_SOCKET_PORT = 255,
-    SOCKET_BUFFER_SIZE = 256,
+    SOCKET_BUFFER_SIZE = 128,
 };
 
 enum socket_state{
@@ -59,6 +59,14 @@ typedef struct socket_store_t{
     uint16_t testTransferFin;
     uint16_t testTransferCurr;
     uint8_t nodeDest;
+    uint8_t nodeSrcPort;
+    uint8_t nodeDestPort;
+
+
+    uint8_t lastTypeSent;//
+    // flag 0 = data, flag 1 = SYN, flag 2 = ACK, flag 3 = SYN-ACK, flag 4 = FIN, flag 5 = FIN-ACK
+    uint32_t lastTimeSent;
+    uint8_t RTTupdatable;
 }socket_store_t;
 
 #endif

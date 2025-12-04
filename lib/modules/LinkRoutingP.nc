@@ -35,7 +35,7 @@ implementation{
     uint8_t discovered[256]={0};
 
     task void sendLinkState(){
-        dbg(GENERAL_CHANNEL,"LinkRouting: Sending Link State\n");
+        // dbg(GENERAL_CHANNEL,"LinkRouting: Sending Link State\n");
         numNeighbors= call NeighborDiscovery.numNeighbors();
         selfPayload[0]=nodeID;
         selfPayload[1]=numNeighbors;
@@ -230,7 +230,7 @@ implementation{
         
    }
    event void sendTimer.fired(){
-    dbg(GENERAL_CHANNEL,"timer fired\n");
+    // dbg(GENERAL_CHANNEL,"timer fired\n");
     state=2;
     post buildTable();
    }
