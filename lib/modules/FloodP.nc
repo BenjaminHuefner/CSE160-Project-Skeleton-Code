@@ -62,7 +62,7 @@ implementation{
                   
                   // dbg(FLOODING_CHANNEL, "%d Flood Neighbor %d\n", nodeID,currNeighbor);
                   // if(floodPackage.src==2){
-                  // dbg(FLOODING_CHANNEL, "Node %d flooding to %d packet originally from %d with seq %d\n",nodeID, currNeighbor,floodPackage.src,floodPackage.seq);
+                  dbg(FLOODING_CHANNEL, "Node %d flooding to %d packet originally from %d with seq %d\n",nodeID, currNeighbor,floodPackage.src,floodPackage.seq);
 
                   // }
                   call SimpleSend.send(linkPackage,linkPackage.dest);
@@ -148,6 +148,7 @@ implementation{
 
    command error_t Flood.flood(pack msg,uint8_t ID){
       //lastSrc=tempSrc;
+         // dbg(GENERAL_CHANNEL,"test\n");
       nodeID=ID;
       linkPackage=msg;
       temp=msg.payload;

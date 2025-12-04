@@ -122,6 +122,7 @@ implementation{
 
    command error_t IP.sendTCP(uint8_t src , uint16_t dest, uint8_t* payload){
     nodeID=src;
+    // dbg(GENERAL_CHANNEL, "IP Send TCP Called from %d to %d\n",src,dest);
     makePack(&IPPackage, src, dest, 5, 4, seqNum, payload, PACKET_MAX_PAYLOAD_SIZE);
       temp= &IPPackage;
       seqNum--;

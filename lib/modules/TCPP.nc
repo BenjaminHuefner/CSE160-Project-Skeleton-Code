@@ -142,6 +142,7 @@ implementation{
             switch(p.TTL){
                 case 0: //DATA
                     // Handle Data Packet
+                    dbg(GENERAL_CHANNEL, "DATA Received at %d from %d:%d with payload: %d\n",TOS_NODE_ID,orgSrc,p.src, *(p.payload));
                     break;
                 case 1: //SYN
                     // Handle SYN Packet
@@ -168,7 +169,7 @@ implementation{
                                 currentSocket->nodeDest = orgSrc;
                                 currentSocket->dest.port = p.src;
                                 // dbg(GENERAL_CHANNEL, "test\n");
-                                dbg(GENERAL_CHANNEL, "Connection Established at %d\n",TOS_NODE_ID);
+                                dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d\n",TOS_NODE_ID,p.dest);
                             // }
                             break;
                         case ESTABLISHED:
@@ -194,7 +195,7 @@ implementation{
                                 currentSocket->nodeDest = orgSrc;
                                 currentSocket->dest.port = p.src;
                             sendAck(orgSrc, p.src, p.dest);
-                            dbg(GENERAL_CHANNEL, "Connection Established at %d\n",TOS_NODE_ID);
+                            dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d\n",TOS_NODE_ID,p.dest);
                             // currentSocket->state = ESTABLISHED;
                             // sendAck(p.src, p.src, p.dest);
                             // dbg(GENERAL_CHANNEL, "Connection Established at %d\n",TOS_NODE_ID);
@@ -219,27 +220,58 @@ implementation{
                             currentSocket->state = TIME_WAIT;
                             sendAck(orgSrc, p.src, p.dest);
                             dbg(GENERAL_CHANNEL, "Connection Closed at %d\n",TOS_NODE_ID);
+                            // dbg(GENERAL_CHANNEL, "last byte written %d\n", currentSocket->sendBuff[currentSocket->lastWritten]);
                         // }
                     }
                     break;
 
                 
-            }
+            }   
         }
+        if(call baseTimer.isRunning() == FALSE){
+                call baseTimer.startOneShot((call Random.rand16() %1000));
+            }
    }
 
    task void sendTestData(){
     if(sockets[activeSocket].state == ESTABLISHED && sockets[activeSocket].socketState == 1){
+        // dbg(GENERAL_CHANNEL,"this socket state:%d, this socket socketState:%d\n",sockets[activeSocket].state,sockets[activeSocket].socketState);
+        // dbg(GENERAL_CHANNEL,"activesocket=%d\n",activeSocket);
         // Send Data Packet
         if(sockets[activeSocket].testTransferCurr < sockets[activeSocket].testTransferFin){
-            sockets[activeSocket].sendBuff[sockets[activeSocket].lastWritten+1] = sockets[activeSocket].testTransferCurr;
-            sockets[activeSocket].lastWritten++;
+            // dbg(GENERAL_CHANNEL, "lastWritten before: %d\n",sockets[activeSocket].lastWritten);
+            // dbg(GENERAL_CHANNEL, "lastWritten +1: %d\n",sockets[activeSocket].lastWritten+1);
+            if(sockets[activeSocket].lastWritten+1 < sockets[activeSocket].lastWritten){
+                sockets[activeSocket].lastWritten=0;
+            }else{
+                sockets[activeSocket].lastWritten=sockets[activeSocket].lastWritten+1;   
+            }
+            sockets[activeSocket].sendBuff[sockets[activeSocket].lastWritten] = sockets[activeSocket].testTransferCurr;
+            // dbg(GENERAL_CHANNEL, "lastWritten: %d\n",sockets[activeSocket].lastWritten);
+            // dbg(GENERAL_CHANNEL, "Data at index %d: %d\n",sockets[activeSocket].lastWritten,sockets[activeSocket].sendBuff[sockets[activeSocket].lastWritten]);
             sockets[activeSocket].testTransferCurr++;
+            // dbg(GENERAL_CHANNEL, "testTransferCurr: %d\n",sockets[activeSocket].testTransferCurr);
         }
-        makePack(&sendPacket, activeSocket, sockets[activeSocket].dest.port, 0,0, 0, &sockets[activeSocket].sendBuff[sockets[activeSocket].lastSent+1]);
-        call IP.sendTCP(nodeID, sockets[activeSocket].nodeDest, &sendPacket);
-        dbg(GENERAL_CHANNEL, "DATA Sent from %d:%d to %d:%d\n",TOS_NODE_ID,activeSocket ,sockets[activeSocket].nodeDest,sockets[activeSocket].dest.port);
-        sockets[activeSocket].lastSent++;
+        // dbg(GENERAL_CHANNEL, "lastSent before: %d\n",sockets[activeSocket].lastSent);
+        // dbg(GENERAL_CHANNEL, "lastSent +1: %d\n",sockets[activeSocket].lastSent+1);
+        if(sockets[activeSocket].lastSent != sockets[activeSocket].lastWritten){
+            // All data sent
+        if(sockets[activeSocket].lastSent+1 < sockets[activeSocket].lastSent){
+                sockets[activeSocket].lastSent=0;
+            }else{
+                sockets[activeSocket].lastSent=sockets[activeSocket].lastSent+1;   
+            }
+        
+        if((sockets[activeSocket].lastSent <= sockets[activeSocket].lastWritten && sockets[activeSocket].lastAck <= sockets[activeSocket].lastWritten) ||
+           (sockets[activeSocket].lastSent >= sockets[activeSocket].lastWritten && sockets[activeSocket].lastAck >= sockets[activeSocket].lastWritten)){
+            
+            // dbg(GENERAL_CHANNEL, "Last sent after %d\n",sockets[activeSocket].lastSent);
+            makePack(&sendPacket, activeSocket, sockets[activeSocket].dest.port, 0,0, 0, &sockets[activeSocket].sendBuff[sockets[activeSocket].lastSent]);
+            call IP.sendTCP(nodeID, sockets[activeSocket].nodeDest, &sendPacket);
+            // dbg(GENERAL_CHANNEL, "DATA Sent from %d:%d to %d:%d\n",TOS_NODE_ID,activeSocket ,sockets[activeSocket].nodeDest,sockets[activeSocket].dest.port);
+            sockets[activeSocket].lastAck++;
+        }
+        }
     }
 
     activeSocket++;
@@ -249,6 +281,7 @@ implementation{
    }
 
    event void baseTimer.fired(){
+    // dbg(GENERAL_CHANNEL, "Base Timer Fired at %d\n",TOS_NODE_ID);
       post processData();
       post sendTestData();
    }

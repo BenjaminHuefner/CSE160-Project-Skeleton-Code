@@ -31,9 +31,11 @@ implementation{
     uint8_t tentative[256][2]={0};
     uint8_t tentativeCount=0;
     uint8_t confirmed[256][2]={0};
+    uint8_t recieved[256]={0};
+    uint8_t discovered[256]={0};
 
     task void sendLinkState(){
-        // dbg(GENERAL_CHANNEL,"LinkRouting: Sending Link State\n");
+        dbg(GENERAL_CHANNEL,"LinkRouting: Sending Link State\n");
         numNeighbors= call NeighborDiscovery.numNeighbors();
         selfPayload[0]=nodeID;
         selfPayload[1]=numNeighbors;
@@ -42,9 +44,24 @@ implementation{
         }
 
         call Flood.startFlood(nodeID,nodeID,selfPayload);
+        // call Flood.startFlood(nodeID,nodeID,selfPayload);
+        // call Flood.startFlood(nodeID,nodeID,selfPayload);
         call sendTimer.startOneShot(30000);
         
     }
+
+    uint8_t ask(){
+        for(i=0;i<=maxNode;i++){
+            if(discovered[i] && !(recieved[i])){
+                selfPayload[0]=nodeID;
+                selfPayload[1]=0;
+                call Flood.startFlood(nodeID,nodeID,selfPayload);
+                return 1;
+            }
+        }
+        return 0;
+    }
+    
     void dijkstra(){
         for(i=1;i<=maxNode;i++){
             confirmed[i][0]=0;
@@ -112,7 +129,10 @@ implementation{
 
     }
     task void buildTable(){
+        if(!ask()){
+            
         dijkstra();
+        // dbg(GENERAL_CHANNEL,"dijkstra updated\n");
         for(i=1;i<=maxNode;i++){
             routing[i]=confirmed[i][1];
             if(i==nodeID){
@@ -124,6 +144,8 @@ implementation{
             state=0;
             // dbg(GENERAL_CHANNEL,"LinkRouting: Routing Table Built for %d\n",nodeID);
             signal LinkRouting.routingState(1);
+        }
+
         }
     }
     command uint8_t LinkRouting.routingTable(uint8_t dest){
@@ -146,6 +168,7 @@ implementation{
     }
    event void NeighborDiscovery.neighborUpdate(uint8_t updated){
     if(updated){
+            
         nodeID=updated;
         if(maxNode<nodeID){
             maxNode=nodeID;
@@ -167,27 +190,36 @@ implementation{
         // // }
         // }
         
-        if((state==0||state==2)&&nodeID!=0){
-            
-            state=1;
-            signal LinkRouting.routingState(0);
-            post sendLinkState();
-        }
-        if(call sendTimer.isRunning()){
-            call sendTimer.stop();
-            // dbg(GENERAL_CHANNEL,"LinkRouting: Timer Stopped\n");
-        }
+        
+        
             i=otherPayload[1];
-            for(i=0;i<maxNode;i++){
-                graph[otherPayload[0]][i+1]=0;
-            }
-            for(i=0;i<otherPayload[1];i++){
-                graph[otherPayload[0]][otherPayload[i+2]]=1;
-                if(maxNode<otherPayload[i+2]){
-                    maxNode=otherPayload[i+2];
+                if((state==0||state==2)&&nodeID!=0){
+                    
+                    state=1;
+                    signal LinkRouting.routingState(0);
+                    // post sendLinkState();
                 }
-            }
-            call sendTimer.startOneShot(30000);
+                if(call sendTimer.isRunning()){
+                    call sendTimer.stop();
+                    // dbg(GENERAL_CHANNEL,"LinkRouting: Timer Stopped\n");
+                }
+                if(i==0){
+                    post sendLinkState();
+                }else{
+                    for(i=0;i<maxNode;i++){
+                        graph[otherPayload[0]][i+1]=0;
+                    }
+                    recieved[otherPayload[0]]=1;
+                    for(i=0;i<otherPayload[1];i++){
+                        graph[otherPayload[0]][otherPayload[i+2]]=1;
+                        discovered[otherPayload[i+2]]=1;
+                        if(maxNode<otherPayload[i+2]){
+                            maxNode=otherPayload[i+2];
+                        }
+                    }
+                }
+                call sendTimer.startOneShot(30000);
+            
         
 
         // i=0;
@@ -198,6 +230,7 @@ implementation{
         
    }
    event void sendTimer.fired(){
+    dbg(GENERAL_CHANNEL,"timer fired\n");
     state=2;
     post buildTable();
    }

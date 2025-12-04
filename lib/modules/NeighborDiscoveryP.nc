@@ -21,7 +21,8 @@ implementation{
    pack broadcastPackage;
    uint16_t nodeID=0;
    uint8_t *payload=&nodeID;
-   uint16_t count=0;
+   uint8_t count=0;
+   uint8_t start=1;
    uint8_t temp=0;
    uint8_t source;
    uint16_t prot;
@@ -43,7 +44,8 @@ implementation{
       // we can ignore it.
       count++;
       makePack(&broadcastPackage, nodeID, (AM_BROADCAST_ADDR), 1, 6, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
-      if(count==3){
+      if(count==3 && start){
+         start=0;
          // dbg(GENERAL_CHANNEL,"test\n");
          signal NeighborDiscovery.neighborUpdate(nodeID);
       }
@@ -61,7 +63,7 @@ implementation{
          i--;
          temp =call Hashmap.get(call List.get(i));
          dbg(NEIGHBOR_CHANNEL, "Last seqNum from this neighbor %d\n", temp);
-         if(count-temp>3){
+         if(count>temp && count-temp>3){
             delete(call List.get(i));
             if(count>=3){
             // dbg(GENERAL_CHANNEL,"test\n");

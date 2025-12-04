@@ -9,10 +9,10 @@ def main():
     s.runTime(1);
 
     # Load the the layout of the network.
-    s.loadTopo("long_line.topo");
+    s.loadTopo("circle.topo");
 
     # Add a noise model to all of the motes.
-    s.loadNoise("no_noise.txt");
+    s.loadNoise("meyer-heavy.txt");
 
     # Turn on all of the sensors.
     s.bootAll();
@@ -26,32 +26,36 @@ def main():
 
     s.runTime(10);
 
-    s.cmdTestServer(10, 80);
-    s.runTime(20);
+    # s.cmdTestServer(10, 0);
+    # s.runTime(20);
 
-    s.cmdTestClient(5, 1, 10, 80, 100);
-    s.runTime(300);
+    # s.cmdTestServer(1,0);
+    # s.runTime(20);
 
-    s.cmdCloseClient(5, 1, 10, 80);
-    s.runTime(200);
+    # s.cmdTestClient(5, 1, 10, 0, 5);
+    # s.runTime(300);
+    # s.cmdTestClient(5, 2, 1,0, 200 );
+    # s.runTime(300)
+    # s.cmdCloseClient(5, 2, 1, 0);
+    # s.runTime(300);
+    # s.cmdCloseClient(5,1,10,0);
+    # s.runTime(300);
     # After sending a ping, simulate a little to prevent collision.
-    # s.runTime(1);
-    # s.neighborDMP(5);
-    # s.runTime(200);
+    s.runTime(1);
+    s.neighborDMP(5);
+    s.runTime(600);
 
-    # s.routeDMP(4);
-    # s.runTime(10);
-    # s.ping(90,100, "Test1");
-    # s.runTime(1000);
+    s.routeDMP(4);
+    s.runTime(10);
 
-    # s.moteOff(9);
-    # s.runTime(100);
+    s.moteOff(9);
+    s.runTime(500);
 
-    # s.ping(5,10, "Test2");
-    # s.runTime(10);
+    s.ping(5,10, "Test2");
+    s.runTime(10);
 
-    # s.routeDMP(7);
-    # s.runTime(10);
+    s.routeDMP(7);
+    s.runTime(10);
 
 
 
