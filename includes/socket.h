@@ -53,8 +53,9 @@ typedef struct socket_store_t{
     uint8_t lastRcvd;
     uint8_t nextExpected;
 
-    uint16_t RTT;
+    uint32_t RTT;
     uint8_t effectiveWindow;
+    uint8_t advWin;
     uint8_t socketState;// 0 for server, 1 for client
     uint16_t testTransferFin;
     uint16_t testTransferCurr;
@@ -66,7 +67,11 @@ typedef struct socket_store_t{
     uint8_t lastTypeSent;//
     // flag 0 = data, flag 1 = SYN, flag 2 = ACK, flag 3 = SYN-ACK, flag 4 = FIN, flag 5 = FIN-ACK
     uint32_t lastTimeSent;
+    uint8_t lastSeqSent;
     uint8_t RTTupdatable;
+    uint8_t seqUpdatable;
+    uint8_t updatable;
+    uint8_t identicalAcks;
 }socket_store_t;
 
 #endif

@@ -12,7 +12,7 @@ def main():
     s.loadTopo("long_line.topo");
 
     # Add a noise model to all of the motes.
-    s.loadNoise("some_noise.txt");
+    s.loadNoise("meyer-heavy.txt");
 
     # Turn on all of the sensors.
     s.bootAll();
@@ -24,7 +24,7 @@ def main():
     # s.addChannel(s.NEIGHBOR_CHANNEL);
 
 
-    s.runTime(600);
+    s.runTime(400);
 
     s.cmdTestServer(10, 0);
     s.runTime(20);
@@ -32,14 +32,14 @@ def main():
     s.cmdTestServer(1,0);
     s.runTime(20);
 
-    s.cmdTestClient(5, 1, 10, 0, 5);
+    s.cmdTestClient(5, 1, 10, 0, 250);
     s.runTime(500);
     # s.cmdTestClient(5, 2, 1,0, 1000);
     # s.runTime(500)
     # s.cmdCloseClient(5, 2, 1, 0);
-    s.runTime(100);
+    s.runTime(300);
     s.cmdCloseClient(5,1,10,0);
-    s.runTime(100);
+    s.runTime(300);
     # After sending a ping, simulate a little to prevent collision.
     # s.runTime(1);
     # s.neighborDMP(5);
