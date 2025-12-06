@@ -74,7 +74,7 @@ implementation{
         // sockets[srcport].lastTimeSent= call baseTimer.getNow();
       makePack(&sendPacket, srcport, destport, 2,0, sockets[srcport].advWin, &byteSent);
       call IP.sendTCP(nodeID, dest, &sendPacket); 
-    //    dbg(GENERAL_CHANNEL, "ACK Sent from %d:%d to %d:%d acknowledging byte %d\n",TOS_NODE_ID,srcport ,dest,destport,byteSent);
+       dbg(GENERAL_CHANNEL, "ACK Sent from %d:%d to %d:%d acknowledging byte %d\n",TOS_NODE_ID,srcport ,dest,destport,byteSent);
     }
 
     void sendSynAck(uint8_t dest, uint16_t destport, uint16_t srcport){

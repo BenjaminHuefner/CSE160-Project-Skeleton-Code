@@ -12,7 +12,7 @@ def main():
     s.loadTopo("long_line.topo");
 
     # Add a noise model to all of the motes.
-    s.loadNoise("meyer-heavy.txt");
+    s.loadNoise("some_noise.txt");
 
     # Turn on all of the sensors.
     s.bootAll();
@@ -24,7 +24,7 @@ def main():
     # s.addChannel(s.NEIGHBOR_CHANNEL);
 
 
-    s.runTime(400);
+    s.runTime(700);
 
     s.cmdTestServer(10, 0);
     s.runTime(20);

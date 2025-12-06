@@ -32,6 +32,7 @@ implementation{
     uint8_t *pay=&seqNum;
     uint8_t *temp=&floodPackage;
     uint8_t neighborState=0;
+    uint8_t lastSeqNum[255]={0};
 
     void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t *payload, uint8_t length){
       Package->src = src;
@@ -84,15 +85,22 @@ implementation{
       call Queue2.dequeue();
       floodPackage= *(pack*) linkPackage.payload;
       
-      if(call Hashmap.contains(floodPackage.src)){
-         if(call Hashmap.get(floodPackage.src)>=floodPackage.seq){
-            // dbg(FLOODING_CHANNEL,"Old Packet from %d with seq %d\n",floodPackage.src,floodPackage.seq);
+      if(lastSeqNum[floodPackage.src]!=0){//call Hashmap.contains(floodPackage.src)){
+         if(lastSeqNum[floodPackage.src]>=floodPackage.seq){//call Hashmap.get(floodPackage.src)>=floodPackage.seq){
+            dbg(FLOODING_CHANNEL,"Old Packet from %d with seq %d\n",floodPackage.src,floodPackage.seq);
             old=1;
          }
       }
+      if(lastSeqNum[floodPackage.src]==0){//!(call Hashmap.contains(floodPackage.src))){
+         // call Hashmap.insert(floodPackage.src,floodPackage.seq);
+         lastSeqNum[floodPackage.src]=floodPackage.seq;
+         old=0;
+      }
       if(!old){
          
-         call Hashmap.insert(floodPackage.src,floodPackage.seq);
+         dbg(FLOODING_CHANNEL,"New Packet from %d with seq %d\n",floodPackage.src,floodPackage.seq);
+         // call Hashmap.insert(floodPackage.src,floodPackage.seq);
+         lastSeqNum[floodPackage.src]=floodPackage.seq;
          // numNeighbor= call NeighborDiscovery.numNeighbors();
          linkPackage.TTL--;
          call Queue.enqueue(linkPackage);
