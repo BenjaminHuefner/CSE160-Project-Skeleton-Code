@@ -16,6 +16,11 @@ class TestSim:
     CMD_TEST_SERVER=5
     CMD_TEST_CLIENT=4
     CMD_CLOSE_CLIENT=7
+    CMD_CHAT_SERVER=10
+    CMD_CHAT_CONNECT=11
+    CMD_CHAT_BROADCAST=12
+    CMD_CHAT_UNICAST=13
+    CMD_CHAT_LIST=14
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";
@@ -142,6 +147,21 @@ class TestSim:
 
     def cmdCloseClient(self, source, srcport, dest, destport):
         self.sendCMD(self.CMD_CLOSE_CLIENT, source, "{0}{1}".format(chr(srcport),chr(dest)+chr(destport)));
+
+    def cmdChatServer(self, source, port):
+        self.sendCMD(self.CMD_CHAT_SERVER, source, "{0}".format(chr(port)));
+
+    def cmdChatClient(self, source, srcport, dest, destport, msg):
+        self.sendCMD(self.CMD_CHAT_CONNECT, source, "{0}{1}".format(chr(srcport),chr(dest)+chr(destport)+chr(len(msg)+1)+msg));
+
+    def cmdChatBroadcast(self, source, msg):
+        self.sendCMD(self.CMD_CHAT_BROADCAST, source, "{0}{1}".format(chr(len(msg)+1),msg));
+
+    def cmdChatUnicast(self, source, username, msg):
+        self.sendCMD(self.CMD_CHAT_UNICAST, source, "{0}{1}".format(chr(len(msg)+1)+chr(len(username)+1)+username+"\0",msg));
+
+    def cmdChatList(self, source):
+        self.sendCMD(self.CMD_CHAT_LIST, source, "list command");
 
 def main():
     s = TestSim();

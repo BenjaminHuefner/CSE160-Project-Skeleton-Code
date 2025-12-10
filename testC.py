@@ -1,4 +1,3 @@
-
 from TestSim import TestSim
 def main():
     # Get simulation ready to run.
@@ -6,7 +5,7 @@ def main():
     # Before we do anything, lets simulate the network off.
     s.runTime(1);
     # Load the the layout of the network.
-    s.loadTopo("tuna-melt.topo");
+    s.loadTopo("pizza.topo");
     # Add a noise model to all of the motes.
     s.loadNoise("meyer-heavy.txt");
     # Turn on all of the sensors.
@@ -15,19 +14,17 @@ def main():
     s.addChannel(s.COMMAND_CHANNEL);
     s.addChannel(s.GENERAL_CHANNEL);
     s.addChannel(s.TRANSPORT_CHANNEL);
-    # s.addChannel(s.FLOODING_CHANNEL);
     # After sending a ping, simulate a little to prevent collision.
-    s.runTime(300);
-    s.cmdTestServer(1,0);
-    s.runTime(60);
-    # s.cmdTestServer(1,1);
-    # s.runTime(60);
-    s.cmdTestClient(4,1,1,0,100);
-    s.runTime(1);
-    s.cmdTestClient(5,1,1,0,100);
-    s.runTime(1);
-    s.runTime(1000);
-    s.cmdCloseClient(4,1,1,0);
-    s.runTime(200);
+    s.runTime(10);
+    s.cmdChatServer(1,0);
+    s.runTime(10);
+    s.cmdChatClient(13,1,1,0,"Hello World!");
+    s.runTime(10);
+    s.cmdChatBroadcast(1,"12345678901234567890123");
+    s.runTime(10);
+    s.cmdChatUnicast(1,"Node13","Private Message");
+    s.runTime(10);
+    s.cmdChatList(1);
+    s.runTime(10);
 if __name__ == '__main__':
     main()

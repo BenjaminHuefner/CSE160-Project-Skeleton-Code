@@ -74,13 +74,38 @@ implementation{
                 break;
 
             case CMD_TEST_SERVER:
-                dbg(COMMAND_CHANNEL, "Command Type: Server\n");
+                dbg(COMMAND_CHANNEL, "Command Type: Test Server\n");
                 signal CommandHandler.setTestServer(buff[0]);
                 break;
 
             case CMD_CLOSE_CLIENT:
                 dbg(COMMAND_CHANNEL, "Command Type: Close Client\n");
                 signal CommandHandler.closeClient(buff[0], buff[1], buff[2]);
+                break;
+
+            case CMD_CHAT_SERVER:
+                dbg(COMMAND_CHANNEL, "Command Type: Chat Server\n");
+                signal CommandHandler.setChatServer(buff[0]);
+                break;
+
+            case CMD_CHAT_CONNECT:
+                dbg(COMMAND_CHANNEL, "Command Type: Chat Connect\n");
+                signal CommandHandler.ChatConnect(buff[0], buff[1], buff[2], buff[3], &buff[4]);
+                break;
+            
+            case CMD_CHAT_BROADCAST:
+                dbg(COMMAND_CHANNEL, "Command Type: Chat Broadcast\n");
+                signal CommandHandler.ChatBroadcast(buff[0], &buff[1]);
+                break;
+
+            case CMD_CHAT_UNICAST:
+                dbg(COMMAND_CHANNEL, "Command Type: Chat Unicast\n");
+                signal CommandHandler.ChatUnicast(buff[0], buff[1], &buff[2], &buff[2 + buff[1]]);
+                break;
+            
+            case CMD_CHAT_LIST:
+                dbg(COMMAND_CHANNEL, "Command Type: Chat List\n");
+                signal CommandHandler.ChatList();
                 break;
 
             default:

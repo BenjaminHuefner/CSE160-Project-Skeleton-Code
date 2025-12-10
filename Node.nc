@@ -21,6 +21,8 @@ module Node{
    uses interface LinkRouting;
    uses interface IP;
    uses interface TCP;
+   uses interface ChatClient;
+   uses interface ChatServer;
 
    uses interface SplitControl as AMControl;
    uses interface Receive;
@@ -64,6 +66,8 @@ implementation{
    event void LinkRouting.routingState(uint8_t updated){}
    event void IP.sendState(uint8_t updated){}
    event void IP.tcpReceived(uint8_t src, uint8_t* payload){}
+   event void TCP.serverConnected(uint8_t port){}
+   event void TCP.clientConnected(uint8_t port){}
 
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
       if(len==sizeof(pack)){
@@ -124,9 +128,24 @@ implementation{
       call TCP.closeClient(TOS_NODE_ID, port, dest, destport);
    }
 
-   event void CommandHandler.setAppServer(){}
-
-   event void CommandHandler.setAppClient(){}
+   event void CommandHandler.setChatServer(uint8_t port){
+      // dbg(GENERAL_CHANNEL, "CHAT SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
+   }
+   event void CommandHandler.ChatConnect(uint8_t srcport, uint8_t dest, uint8_t destport, uint8_t namelength, uint8_t *username){
+      // dbg(GENERAL_CHANNEL, "CHAT CONNECT EVENT %d to %d:%d from port %d with username %s\n",TOS_NODE_ID,dest,destport,srcport,username);
+      // dbg(GENERAL_CHANNEL, "Name Length: %d\n",namelength);
+   }
+   event void CommandHandler.ChatBroadcast(uint8_t msglength,uint8_t *payload){
+      // dbg(GENERAL_CHANNEL, "CHAT BROADCAST EVENT %d: %s\n",TOS_NODE_ID,payload);
+      // dbg(GENERAL_CHANNEL, "Message Length: %d\n",msglength);
+   }
+   event void CommandHandler.ChatUnicast(uint8_t msglength, uint8_t namelength, uint8_t *username, uint8_t *msg){
+      // dbg(GENERAL_CHANNEL, "CHAT UNICAST EVENT %d to %s: %s\n",TOS_NODE_ID,username,msg);
+      // dbg(GENERAL_CHANNEL, "Lengths: msg %d, name %d\n",msglength, namelength);
+   }
+   event void CommandHandler.ChatList(){
+      // dbg(GENERAL_CHANNEL, "CHAT LIST EVENT %d\n",TOS_NODE_ID);
+   }
 
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){
       Package->src = src;

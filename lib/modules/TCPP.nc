@@ -16,7 +16,7 @@ module TCPP{
    
 }
 implementation{
-    uint16_t i[10];
+    uint8_t i;
     uint8_t nodeID;
     uint8_t state=0;
     uint8_t finSeq=0;
@@ -26,6 +26,7 @@ implementation{
     uint8_t* dummy= &nodeID;
     socket_store_t sockets[10];
     socket_store_t* currentSocket;
+    socket_store_t* tempSocket;
     pack sendPacket;
     pack recvPacket;
 
@@ -88,6 +89,8 @@ implementation{
         sockets[srcport].lastWritten= (uint8_t) temp;
     sockets[srcport].updatable = 1;
         sockets[srcport].lastTypeSent= 3;
+        
+        sockets[srcport].advWin=128;
         sockets[srcport].lastTimeSent= call baseTimer.getNow();
         makePack(&sendPacket, srcport, destport, 3,temp, sockets[srcport].advWin, &byteSent);
         call IP.sendTCP(nodeID, dest, &sendPacket);
@@ -130,6 +133,19 @@ implementation{
         return SUCCESS;
     }
 
+    command error_t TCP.AppServer(uint8_t src, uint8_t port){
+        dbg(GENERAL_CHANNEL, "APP SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
+        temp=call Random.rand16();
+        temp=temp>>9;
+        nodeID=src;
+        sockets[port].state = LISTEN;
+        sockets[port].socketState = 2; // App Server Socket
+        sockets[port].advWin=128;
+        sockets[port].RTT=70000;
+        tempSocket= &sockets[0];
+        return (uint8_t)tempSocket;
+    }
+
     command error_t TCP.testClient(uint8_t src, uint8_t srcport, uint8_t dest, uint8_t destport, uint16_t transfer){
         dbg(GENERAL_CHANNEL, "TEST CLIENT EVENT %d to %d:%d from port %d\n",src,dest,destport,srcport);
         nodeID=src;
@@ -150,17 +166,29 @@ implementation{
             call baseTimer.startOneShot((call Random.rand16() %1000));
         }
 
-        // i[srcport]=0;
-        // while(i[srcport]<transfer){
-        //  if(transfer - i[srcport] >= 5){
-        //  dbg(GENERAL_CHANNEL, "%d,%d,%d,%d,%d\n", i[srcport],i[srcport]+1,i[srcport]+2,i[srcport]+3,i[srcport]+4);
-        //  i[srcport]+=5;
-        //  } else {
-        //  dbg(GENERAL_CHANNEL, "%d\n", i[srcport]);
-        //  i[srcport]++;
-        //  }
-
         return SUCCESS;
+      
+    }
+
+    command error_t TCP.AppClient(uint8_t src, uint8_t srcport, uint8_t dest, uint8_t destport){
+        dbg(GENERAL_CHANNEL, "APP CLIENT EVENT %d to %d:%d from port %d\n",src,dest,destport,srcport);
+        nodeID=src;
+        temp=call Random.rand16();
+        temp=temp>>9;
+        sendSyn(dest, destport, srcport);
+        sockets[srcport].nodeDest = dest;
+        sockets[srcport].nodeDestPort = destport;
+        sockets[srcport].nodeSrcPort = srcport;
+        sockets[srcport].dest.port = destport;
+        sockets[srcport].state = SYN_SENT;
+        sockets[srcport].socketState = 3; // App Client Socket
+        sockets[srcport].advWin=128;
+        sockets[srcport].RTT=70000;
+        if(call baseTimer.isRunning() == FALSE){
+            call baseTimer.startOneShot((call Random.rand16() %1000));
+        }
+        tempSocket= &sockets[srcport];
+        return (uint8_t)tempSocket;
       
     }
     void updateRTT(){
@@ -205,6 +233,16 @@ implementation{
                     // Handle SYN Packet
                     switch(currentSocket->state){
                         case LISTEN:
+                            for(i=0;i<10;i++){
+                                if(sockets[i].state == CLOSED){
+                                    currentSocket=&sockets[i];
+                                    temp=call Random.rand16();
+                                    temp=temp>>9;
+                                    dbg(GENERAL_CHANNEL, "Allocating new socket at index %d\n",i);
+                                    p.dest=i;
+                                    break;
+                                }
+                            }
                             dbg(GENERAL_CHANNEL, "SYN Received at %d from listening \n",TOS_NODE_ID);
                             currentSocket->nodeDest = orgSrc;
                             currentSocket->nodeSrcPort = p.dest;
@@ -244,7 +282,8 @@ implementation{
                                 currentSocket->effectiveWindow=p.protocol;
                                 // dbg(GENERAL_CHANNEL, "test\n");
                                 updateRTT();
-                                dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d\n",TOS_NODE_ID,p.dest);
+                                dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d with %d, port %d\n",TOS_NODE_ID,p.dest,orgSrc,p.src);
+                                signal TCP.serverConnected(p.dest);
                             // }
                             break;
                         case ESTABLISHED:
@@ -289,7 +328,8 @@ implementation{
                             if(currentSocket->nextExpected>127){currentSocket->nextExpected=0;}
                             updateRTT();
                             sendAck(orgSrc, p.src, p.dest);
-                            dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d\n",TOS_NODE_ID,p.dest);
+                            dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d with %d, port %d\n",TOS_NODE_ID,p.dest,orgSrc,p.src);
+                            signal TCP.clientConnected(p.dest);
                             // currentSocket->state = ESTABLISHED;
                             // sendAck(p.src, p.src, p.dest);
                             // dbg(GENERAL_CHANNEL, "Connection Established at %d\n",TOS_NODE_ID);
@@ -406,11 +446,11 @@ implementation{
         
         if(((sockets[activeSocket].lastSent <= sockets[activeSocket].lastWritten && sockets[activeSocket].lastAck <= sockets[activeSocket].lastWritten) ||
            (sockets[activeSocket].lastSent >= sockets[activeSocket].lastWritten && sockets[activeSocket].lastAck >= sockets[activeSocket].lastWritten))){
-            // dbg(GENERAL_CHANNEL,"lastSent %d lastAck %d effective window %d\n",sockets[activeSocket].lastSent,sockets[activeSocket].lastAck,sockets[activeSocket].effectiveWindow);
+            dbg(GENERAL_CHANNEL,"lastSent %d lastAck %d effective window %d\n",sockets[activeSocket].lastSent,sockets[activeSocket].lastAck,sockets[activeSocket].effectiveWindow);
            if((sockets[activeSocket].lastSent>=sockets[activeSocket].lastAck && sockets[activeSocket].lastSent-sockets[activeSocket].lastAck<sockets[activeSocket].effectiveWindow)||
            (sockets[activeSocket].lastSent<sockets[activeSocket].lastAck && sockets[activeSocket].lastAck-sockets[activeSocket].lastSent<sockets[activeSocket].effectiveWindow)){
             
-            // dbg(GENERAL_CHANNEL, "Last sent after %d\n",sockets[activeSocket].lastSent);
+            dbg(GENERAL_CHANNEL, "Last sent after %d\n",sockets[activeSocket].lastSent);
             if(sockets[activeSocket].lastSent+1 >127 ){
                 sockets[activeSocket].lastSent=0;
             }else{

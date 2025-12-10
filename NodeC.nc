@@ -42,6 +42,12 @@ implementation {
 
     components TCPC;
     Node.TCP -> TCPC;
+
+    components ChatServerC;
+    Node.ChatServer -> ChatServerC;
+
+    components ChatClientC;
+    Node.ChatClient -> ChatClientC;
     
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;

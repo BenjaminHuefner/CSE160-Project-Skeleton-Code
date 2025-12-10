@@ -56,7 +56,7 @@ typedef struct socket_store_t{
     uint32_t RTT;
     uint8_t effectiveWindow;
     uint8_t advWin;
-    uint8_t socketState;// 0 for server, 1 for client
+    uint8_t socketState;// 0 for testserver, 1 for testclient, 2 for chatserver, 3 for chatclient
     uint16_t testTransferFin;
     uint16_t testTransferCurr;
     uint8_t nodeDest;
