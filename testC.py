@@ -11,20 +11,29 @@ def main():
     # Turn on all of the sensors.
     s.bootAll();
     # Add the main channels. These channels are declared in includes/channels.h
-    s.addChannel(s.COMMAND_CHANNEL);
-    s.addChannel(s.GENERAL_CHANNEL);
-    s.addChannel(s.TRANSPORT_CHANNEL);
+    # s.addChannel(s.COMMAND_CHANNEL);
+    # s.addChannel(s.GENERAL_CHANNEL);
+    # s.addChannel(s.TRANSPORT_CHANNEL);
+    s.addChannel(s.CHAT_CHANNEL);
     # After sending a ping, simulate a little to prevent collision.
-    s.runTime(10);
+    s.runTime(200);
     s.cmdChatServer(1,0);
     s.runTime(10);
-    s.cmdChatClient(13,1,1,0,"Hello World!");
+    s.cmdChatClient(13,1,1,0,"Node13");
     s.runTime(10);
-    s.cmdChatBroadcast(1,"12345678901234567890123");
+    s.cmdChatClient(8,1,1,0,"Node8");
     s.runTime(10);
-    s.cmdChatUnicast(1,"Node13","Private Message");
+    s.cmdChatClient(9,1,1,0,"Node9");
     s.runTime(10);
-    s.cmdChatList(1);
-    s.runTime(10);
+    s.cmdChatClient(3,1,1,0,"Node3");
+    s.runTime(200);
+    s.cmdChatBroadcast(13,"12345678901234567890123");
+    s.runTime(200);
+    s.cmdChatUnicast(13,"Node8","Private Message");
+    s.runTime(200);
+    s.cmdChatList(13);
+    s.runTime(200);
+    s.cmdChatList(8);
+    s.runTime(1000);
 if __name__ == '__main__':
     main()

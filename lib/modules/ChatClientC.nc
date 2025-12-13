@@ -24,10 +24,10 @@ implementation{
     ChatClientP.Random -> Random;
 
    //Lists
-   components new QueueC(chatMsg, 10);
+   components new QueueC(chatMsg, 30);
     ChatClientP.sendQueue -> QueueC;
 
-    components new QueueC(chatMsg, 10) as QueueC2;
+    components new QueueC(chatMsg, 30) as QueueC2;
     ChatClientP.rcvQueue -> QueueC2;
   
 

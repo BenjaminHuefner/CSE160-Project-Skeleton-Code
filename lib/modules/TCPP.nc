@@ -51,7 +51,7 @@ implementation{
    void sendSyn(uint8_t dest, uint16_t destport, uint16_t srcport){
     // dbg(GENERAL_CHANNEL, "%d\n",temp);
     
-    dbg(GENERAL_CHANNEL,"starting Syn index %d\n",temp);
+    // dbg(GENERAL_CHANNEL,"starting Syn index %d\n",temp);
     // dbg(GENERAL_CHANNEL, "%d\n",temp);
     sockets[srcport].lastSent = (uint8_t) temp;
     sockets[srcport].lastAck= (uint8_t) temp;
@@ -63,7 +63,7 @@ implementation{
       makePack(&sendPacket, srcport, destport, 1,temp, sockets[srcport].advWin, dummy);
       call IP.sendTCP(nodeID, dest, &sendPacket);
 
-       dbg(GENERAL_CHANNEL, "SYN Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
+    //    dbg(GENERAL_CHANNEL, "SYN Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
 
    }
 
@@ -75,13 +75,13 @@ implementation{
         // sockets[srcport].lastTimeSent= call baseTimer.getNow();
       makePack(&sendPacket, srcport, destport, 2,0, sockets[srcport].advWin, &byteSent);
       call IP.sendTCP(nodeID, dest, &sendPacket); 
-       dbg(GENERAL_CHANNEL, "ACK Sent from %d:%d to %d:%d acknowledging byte %d\n",TOS_NODE_ID,srcport ,dest,destport,byteSent);
+    //    dbg(GENERAL_CHANNEL, "ACK Sent from %d:%d to %d:%d acknowledging byte %d\n",TOS_NODE_ID,srcport ,dest,destport,byteSent);
     }
 
     void sendSynAck(uint8_t dest, uint16_t destport, uint16_t srcport){
         byteSent=sockets[srcport].nextExpected;
     // dbg(GENERAL_CHANNEL, "%d\n",temp);
-        dbg(GENERAL_CHANNEL,"starting SynAck index %d\n",temp);
+        // dbg(GENERAL_CHANNEL,"starting SynAck index %d\n",temp);
         // dbg(GENERAL_CHANNEL, "%d\n",temp);
         sockets[srcport].lastSent = (uint8_t) temp;
         sockets[srcport].lastAck= (uint8_t) temp-1;
@@ -95,7 +95,7 @@ implementation{
         makePack(&sendPacket, srcport, destport, 3,temp, sockets[srcport].advWin, &byteSent);
         call IP.sendTCP(nodeID, dest, &sendPacket);
         
-        dbg(GENERAL_CHANNEL, "SYN-ACK Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
+        // dbg(GENERAL_CHANNEL, "SYN-ACK Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
     }
 
     void sendFin(uint8_t dest, uint16_t destport, uint16_t srcport){
@@ -106,7 +106,7 @@ implementation{
         sockets[srcport].lastTimeSent= call baseTimer.getNow();
       makePack(&sendPacket, srcport, destport, 4,finSeq, 0, dummy);
       call IP.sendTCP(nodeID, dest, &sendPacket); 
-       dbg(GENERAL_CHANNEL, "FIN Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
+    //    dbg(GENERAL_CHANNEL, "FIN Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
     }
 
     void sendFinAck(uint8_t dest, uint16_t destport, uint16_t srcport){
@@ -117,12 +117,12 @@ implementation{
         sockets[srcport].lastTimeSent= call baseTimer.getNow();
       makePack(&sendPacket, srcport, destport, 5,finSeq, 0, &byteSent);
       call IP.sendTCP(nodeID, dest, &sendPacket); 
-       dbg(GENERAL_CHANNEL, "FIN-ACK Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
+    //    dbg(GENERAL_CHANNEL, "FIN-ACK Sent from %d:%d to %d:%d\n",TOS_NODE_ID,srcport ,dest,destport);
     }
 
 
     command error_t TCP.testServer(uint8_t src, uint8_t port){
-        dbg(GENERAL_CHANNEL, "TEST SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
+        // dbg(GENERAL_CHANNEL, "TEST SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
         temp=call Random.rand16();
         temp=temp>>9;
         nodeID=src;
@@ -133,8 +133,8 @@ implementation{
         return SUCCESS;
     }
 
-    command error_t TCP.AppServer(uint8_t src, uint8_t port){
-        dbg(GENERAL_CHANNEL, "APP SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
+    command uint8_t* TCP.AppServer(uint8_t src, uint8_t port){
+        // dbg(GENERAL_CHANNEL, "APP SERVER EVENT %d on port %d\n",TOS_NODE_ID,port);
         temp=call Random.rand16();
         temp=temp>>9;
         nodeID=src;
@@ -143,11 +143,11 @@ implementation{
         sockets[port].advWin=128;
         sockets[port].RTT=70000;
         tempSocket= &sockets[0];
-        return (uint8_t)tempSocket;
+        return (uint8_t*)tempSocket;
     }
 
     command error_t TCP.testClient(uint8_t src, uint8_t srcport, uint8_t dest, uint8_t destport, uint16_t transfer){
-        dbg(GENERAL_CHANNEL, "TEST CLIENT EVENT %d to %d:%d from port %d\n",src,dest,destport,srcport);
+        // dbg(GENERAL_CHANNEL, "TEST CLIENT EVENT %d to %d:%d from port %d\n",src,dest,destport,srcport);
         nodeID=src;
         temp=call Random.rand16();
         temp=temp>>9;
@@ -170,8 +170,8 @@ implementation{
       
     }
 
-    command error_t TCP.AppClient(uint8_t src, uint8_t srcport, uint8_t dest, uint8_t destport){
-        dbg(GENERAL_CHANNEL, "APP CLIENT EVENT %d to %d:%d from port %d\n",src,dest,destport,srcport);
+    command uint8_t* TCP.AppClient(uint8_t src, uint8_t srcport, uint8_t dest, uint8_t destport){
+        // dbg(GENERAL_CHANNEL, "APP CLIENT EVENT %d to %d:%d from port %d\n",src,dest,destport,srcport);
         nodeID=src;
         temp=call Random.rand16();
         temp=temp>>9;
@@ -188,13 +188,13 @@ implementation{
             call baseTimer.startOneShot((call Random.rand16() %1000));
         }
         tempSocket= &sockets[srcport];
-        return (uint8_t)tempSocket;
+        return (uint8_t*)tempSocket;
       
     }
     void updateRTT(){
         if(currentSocket->RTTupdatable){
             currentSocket->RTT= ((8*currentSocket->RTT) + (call baseTimer.getNow() - currentSocket->lastTimeSent)*8)/10;
-            dbg(GENERAL_CHANNEL, "RTT updated to: %d\n",currentSocket->RTT);
+            // dbg(GENERAL_CHANNEL, "RTT updated to: %d\n",currentSocket->RTT);
         }
         currentSocket->RTTupdatable=1;
     }   
@@ -210,7 +210,7 @@ implementation{
             switch(p.TTL){
                 case 0: //DATA
                     // Handle Data Packet
-                        // dbg(GENERAL_CHANNEL, "DATA Received at %d from %d:%d with payload: %d\n",TOS_NODE_ID,orgSrc,p.src, *(p.payload));
+                        // dbg(GENERAL_CHANNEL, "DATA Received at %d from %d:%d with payload: %c\n",TOS_NODE_ID,orgSrc,p.src, *(p.payload));
                     if(currentSocket->lastRcvd+1 != sockets[activeSocket].lastRead){
                         if(p.seq==currentSocket->nextExpected){
                         if(currentSocket->lastRcvd+1 >127 ){
@@ -224,7 +224,9 @@ implementation{
                         // dbg(GENERAL_CHANNEL, "last received %d\n", currentSocket->lastRcvd);
                         currentSocket->rcvdBuff[currentSocket->lastRcvd]=*(p.payload);
                         currentSocket->nextExpected= p.seq+1;
+                            // dbg(GENERAL_CHANNEL, "Character received: %c\n",currentSocket->rcvdBuff[currentSocket->lastRcvd]);
                                 if(currentSocket->nextExpected>127){currentSocket->nextExpected=0;}
+                                
                         }
                         sendAck(orgSrc, p.src, p.dest);
                     }
@@ -238,12 +240,13 @@ implementation{
                                     currentSocket=&sockets[i];
                                     temp=call Random.rand16();
                                     temp=temp>>9;
-                                    dbg(GENERAL_CHANNEL, "Allocating new socket at index %d\n",i);
+                                    // dbg(GENERAL_CHANNEL, "Allocating new socket at index %d\n",i);
                                     p.dest=i;
                                     break;
                                 }
                             }
-                            dbg(GENERAL_CHANNEL, "SYN Received at %d from listening \n",TOS_NODE_ID);
+                            // dbg(GENERAL_CHANNEL, "SYN Received at %d from listening \n",TOS_NODE_ID);
+                            currentSocket->socketState = 2; // Server Socket
                             currentSocket->nodeDest = orgSrc;
                             currentSocket->nodeSrcPort = p.dest;
                             currentSocket->nodeDestPort = p.src;
@@ -254,7 +257,7 @@ implementation{
                             sendSynAck(orgSrc, p.src, p.dest);
                             break;
                         case SYN_SENT:
-                            dbg(GENERAL_CHANNEL, "SYN Received at %d from syn_sent \n",TOS_NODE_ID);
+                            // dbg(GENERAL_CHANNEL, "SYN Received at %d from syn_sent \n",TOS_NODE_ID);
                             currentSocket->nodeDest = orgSrc;
                             currentSocket->nodeSrcPort = p.dest;
                             currentSocket->nodeDestPort = p.src;
@@ -274,6 +277,7 @@ implementation{
                             // dbg(GENERAL_CHANNEL, "payload: %d, last Sent +1: %d\n",*(p.payload),currentSocket->lastSent + 1);
                             // if(*(p.payload) == currentSocket->lastSent + 1){
                                 currentSocket->state = ESTABLISHED;
+                                // dbg(GENERAL_CHANNEL, "socket pointer real: %p\n",currentSocket);
                                 currentSocket->nodeDest = orgSrc;
                                 currentSocket->nodeSrcPort = p.dest;
                                 currentSocket->nodeDestPort = p.src;
@@ -282,16 +286,30 @@ implementation{
                                 currentSocket->effectiveWindow=p.protocol;
                                 // dbg(GENERAL_CHANNEL, "test\n");
                                 updateRTT();
-                                dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d with %d, port %d\n",TOS_NODE_ID,p.dest,orgSrc,p.src);
-                                signal TCP.serverConnected(p.dest);
+                                // dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d with %d, port %d\n",TOS_NODE_ID,p.dest,orgSrc,p.src);
+                                signal TCP.serverConnected(p.dest,p.src);
                             // }
                             break;
                         case ESTABLISHED:
                             // Handle Data Acknowledgment
+                                    // dbg(GENERAL_CHANNEL, "test\n",TOS_NODE_ID);
+                            if((currentSocket->lastAck==(*(p.payload)-1)&& *(p.payload)!=0) || (currentSocket->lastAck==127 && *(p.payload)==0)){
+                                currentSocket->identicalAcks++;
+                                // dbg(GENERAL_CHANNEL, "Identical Acks: %d\n",currentSocket->identicalAcks);
+                                if(currentSocket->identicalAcks==1){
+                                    if(currentSocket->lastAck != currentSocket->lastWritten){
+                                        currentSocket->lastSent=currentSocket->lastAck;
+                                    }
+                                    currentSocket->identicalAcks=0;
+                                }
+                            }
+                            else{
+                                currentSocket->identicalAcks=0;
+                            }
                             currentSocket->lastAck=*(p.payload)-1;
                             currentSocket->effectiveWindow=p.protocol;
                             if(currentSocket->lastAck>127){currentSocket->lastAck=127;}
-                            // dbg(GENERAL_CHANNEL, "last Ack %d, lastSeqSent %d\n",currentSocket->lastAck,currentSocket->lastSeqSent);
+                            // dbg(GENERAL_CHANNEL, "last Ack %d, lastSeqSent %d\n",currentSocket->lastAck,currentSocket->lastSent);
                             if(currentSocket->lastTypeSent!=0 || currentSocket->lastAck== currentSocket->lastSeqSent){
                                 // dbg(GENERAL_CHANNEL, "test2\n");
                                 if(currentSocket->RTTupdatable){
@@ -304,7 +322,7 @@ implementation{
                         case LAST_ACK:
                             // if(*(p.payload) == currentSocket->lastAck + 1){
                                 currentSocket->state = CLOSED;
-                                dbg(GENERAL_CHANNEL, "Connection Closed at %d\n",TOS_NODE_ID);
+                                // dbg(GENERAL_CHANNEL, "Connection Closed at %d\n",TOS_NODE_ID);
                             // }
                             break;
                     }
@@ -319,6 +337,7 @@ implementation{
                         // if(*(p.payload) == currentSocket->lastSent + 1){
                             // dbg(GENERAL_CHANNEL, "test2\n");
                             currentSocket->state = ESTABLISHED;
+                            // dbg(GENERAL_CHANNEL, "socket pointer: %p\n",currentSocket);
                                 currentSocket->nodeDest = orgSrc;
                             currentSocket->nodeSrcPort = p.dest;
                             currentSocket->nodeDestPort = p.src;
@@ -328,8 +347,8 @@ implementation{
                             if(currentSocket->nextExpected>127){currentSocket->nextExpected=0;}
                             updateRTT();
                             sendAck(orgSrc, p.src, p.dest);
-                            dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d with %d, port %d\n",TOS_NODE_ID,p.dest,orgSrc,p.src);
-                            signal TCP.clientConnected(p.dest);
+                            // dbg(GENERAL_CHANNEL, "Connection Established at %d, port %d with %d, port %d\n",TOS_NODE_ID,p.dest,orgSrc,p.src);
+                            signal TCP.clientConnected(p.dest,p.src);
                             // currentSocket->state = ESTABLISHED;
                             // sendAck(p.src, p.src, p.dest);
                             // dbg(GENERAL_CHANNEL, "Connection Established at %d\n",TOS_NODE_ID);
@@ -363,8 +382,8 @@ implementation{
                             updateRTT();
                             currentSocket->seqUpdatable=0;
                             sendAck(orgSrc, p.src, p.dest);
-                            dbg(GENERAL_CHANNEL, "Connection Closed at %d\n",TOS_NODE_ID);
-                            dbg(GENERAL_CHANNEL, "last byte written %d\n", currentSocket->sendBuff[currentSocket->lastWritten]);
+                            // dbg(GENERAL_CHANNEL, "Connection Closed at %d\n",TOS_NODE_ID);
+                            // dbg(GENERAL_CHANNEL, "last byte written %d\n", currentSocket->sendBuff[currentSocket->lastWritten]);
                         // }
                     }
                     break;
@@ -385,8 +404,11 @@ implementation{
             switch(sockets[index].lastTypeSent){
                 case 0: //DATA
                     // Handle Data Packet
-                    sockets[index].lastSent=sockets[index].lastAck;
-                    // dbg(GENERAL_CHANNEL,"test\n");
+                    if(sockets[index].lastWritten != sockets[index].lastAck){
+                        // dbg(GENERAL_CHANNEL,"resend data from timeout\n");  
+                        sockets[index].lastSent=sockets[index].lastAck;
+                    }
+                    // if(TOS_NODE_ID==1){dbg(GENERAL_CHANNEL,"test\n");}
                     break;
                 case 1: //SYN
                     // Handle SYN Packet
@@ -396,6 +418,10 @@ implementation{
                     break;
                 case 2: //ACK
                     // Handle ACK Packet
+                    // dbg(GENERAL_CHANNEL,"test\n");
+                    if(sockets[index].lastWritten != sockets[index].lastAck){
+                        sockets[index].lastSent=sockets[index].lastAck;
+                    }
                     // sendAck(sockets[index].nodeDest,sockets[index].dest.port,sockets[index].src);
                     break;
                 case 3: //SYN-ACK
@@ -446,11 +472,11 @@ implementation{
         
         if(((sockets[activeSocket].lastSent <= sockets[activeSocket].lastWritten && sockets[activeSocket].lastAck <= sockets[activeSocket].lastWritten) ||
            (sockets[activeSocket].lastSent >= sockets[activeSocket].lastWritten && sockets[activeSocket].lastAck >= sockets[activeSocket].lastWritten))){
-            dbg(GENERAL_CHANNEL,"lastSent %d lastAck %d effective window %d\n",sockets[activeSocket].lastSent,sockets[activeSocket].lastAck,sockets[activeSocket].effectiveWindow);
+            // dbg(GENERAL_CHANNEL,"lastSent %d lastAck %d effective window %d\n",sockets[activeSocket].lastSent,sockets[activeSocket].lastAck,sockets[activeSocket].effectiveWindow);
            if((sockets[activeSocket].lastSent>=sockets[activeSocket].lastAck && sockets[activeSocket].lastSent-sockets[activeSocket].lastAck<sockets[activeSocket].effectiveWindow)||
            (sockets[activeSocket].lastSent<sockets[activeSocket].lastAck && sockets[activeSocket].lastAck-sockets[activeSocket].lastSent<sockets[activeSocket].effectiveWindow)){
             
-            dbg(GENERAL_CHANNEL, "Last sent after %d\n",sockets[activeSocket].lastSent);
+            // dbg(GENERAL_CHANNEL, "Last sent after %d\n",sockets[activeSocket].lastSent);
             if(sockets[activeSocket].lastSent+1 >127 ){
                 sockets[activeSocket].lastSent=0;
             }else{
@@ -488,11 +514,41 @@ implementation{
                 if(sockets[activeSocket].advWin != 128 ){
                     sockets[activeSocket].advWin++;
                 }
-                dbg(GENERAL_CHANNEL, "DATA Read %d\n",sockets[activeSocket].rcvdBuff[sockets[activeSocket].lastRead]);
+                // dbg(GENERAL_CHANNEL, "DATA Read %d\n",sockets[activeSocket].rcvdBuff[sockets[activeSocket].lastRead]);
+            }
+        }else{  
+            if(sockets[activeSocket].state == ESTABLISHED){
+                if(sockets[activeSocket].lastSent != sockets[activeSocket].lastWritten){
+                    if(((sockets[activeSocket].lastSent <= sockets[activeSocket].lastWritten && sockets[activeSocket].lastAck <= sockets[activeSocket].lastWritten) ||
+                    (sockets[activeSocket].lastSent >= sockets[activeSocket].lastWritten && sockets[activeSocket].lastAck >= sockets[activeSocket].lastWritten))){
+                        if((sockets[activeSocket].lastSent>=sockets[activeSocket].lastAck && sockets[activeSocket].lastSent-sockets[activeSocket].lastAck<sockets[activeSocket].effectiveWindow)||
+                        (sockets[activeSocket].lastSent<sockets[activeSocket].lastAck && sockets[activeSocket].lastAck-sockets[activeSocket].lastSent<sockets[activeSocket].effectiveWindow)){
+                            if(sockets[activeSocket].lastSent+1 >127 ){
+                                sockets[activeSocket].lastSent=0;
+                            }else{
+                                sockets[activeSocket].lastSent=sockets[activeSocket].lastSent+1;   
+                            }
+
+                            if(sockets[activeSocket].seqUpdatable){
+                                sockets[activeSocket].lastTypeSent= 0;
+                                sockets[activeSocket].lastSeqSent= sockets[activeSocket].lastSent;
+                                sockets[activeSocket].lastTimeSent= call baseTimer.getNow();
+                                sockets[activeSocket].seqUpdatable=0;
+                            }
+                            // dbg(GENERAL_CHANNEL, "character sent: %c\n",sockets[activeSocket].sendBuff[sockets[activeSocket].lastSent]);
+                            // dbg(GENERAL_CHANNEL, "last sent %d\n",sockets[activeSocket].lastSent);
+                            // dbg(GENERAL_CHANNEL, "last written %d\n",sockets[activeSocket].lastWritten);
+                            // dbg(GENERAL_CHANNEL, "last ack %d\n",sockets[activeSocket].lastAck);
+                            makePack(&sendPacket, activeSocket, sockets[activeSocket].dest.port, 0,sockets[activeSocket].lastSent, 0, &sockets[activeSocket].sendBuff[sockets[activeSocket].lastSent]);
+                            call IP.sendTCP(nodeID, sockets[activeSocket].nodeDest, &sendPacket);
+                        }
+                    }
+                }
             }
         }
 
     }
+   
 
     activeSocket++;
     if(activeSocket>9){
@@ -508,17 +564,17 @@ implementation{
 
     command error_t TCP.closeClient(uint8_t src, uint16_t port, uint8_t dest, uint16_t destport){
         nodeID=src;
-        dbg(GENERAL_CHANNEL, "CLOSE CLIENT EVENT %d to %d:%d from port %d\n",nodeID,dest,destport,port);
+        // dbg(GENERAL_CHANNEL, "CLOSE CLIENT EVENT %d to %d:%d from port %d\n",nodeID,dest,destport,port);
         switch(sockets[port].state){
           case LISTEN:
             sockets[port].state = CLOSED;
             currentSocket->seqUpdatable=0;
-            dbg(GENERAL_CHANNEL, "Socket Closed at %d from Listen\n",TOS_NODE_ID);
+            // dbg(GENERAL_CHANNEL, "Socket Closed at %d from Listen\n",TOS_NODE_ID);
             break;
             case SYN_SENT:
             sockets[port].state = CLOSED;
             currentSocket->seqUpdatable=0;
-            dbg(GENERAL_CHANNEL, "Socket Closed at %d from Syn_Sent\n",TOS_NODE_ID);
+            // dbg(GENERAL_CHANNEL, "Socket Closed at %d from Syn_Sent\n",TOS_NODE_ID);
             break;
             case SYN_RCVD:
             sockets[port].state = FIN_WAIT1;

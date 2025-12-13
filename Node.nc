@@ -66,8 +66,8 @@ implementation{
    event void LinkRouting.routingState(uint8_t updated){}
    event void IP.sendState(uint8_t updated){}
    event void IP.tcpReceived(uint8_t src, uint8_t* payload){}
-   event void TCP.serverConnected(uint8_t port){}
-   event void TCP.clientConnected(uint8_t port){}
+   event void TCP.serverConnected(uint8_t port,uint8_t destport){}
+   event void TCP.clientConnected(uint8_t port,uint8_t destport){}
 
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
       if(len==sizeof(pack)){
